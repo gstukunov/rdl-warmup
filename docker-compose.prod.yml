@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: telegram_bot_postgres_prod
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    networks:
+      - telegram_network
+    restart: always
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER} -d ${DB_NAME}']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: telegram_bot_redis_prod
+    volumes:
+      - redis_data_prod:/data
+    networks:
+      - telegram_network
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ['CMD', 'redis-cli', '--pass', '${REDIS_PASSWORD}', 'ping']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  migrations:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrations
+    container_name: telegram_bot_migrations_prod
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - telegram_network
+    restart: 'no'
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: telegram_bot_app_prod
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_WEBAPP_URL: ${TELEGRAM_WEBAPP_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+    networks:
+      - telegram_network
+    restart: always
+
+volumes:
+  postgres_data_prod:
+  redis_data_prod:
+
+networks:
+  telegram_network:
+    driver: bridge
