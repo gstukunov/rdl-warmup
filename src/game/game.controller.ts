@@ -7,6 +7,7 @@ import {
   Query,
   HttpException,
   HttpStatus,
+  HttpCode,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,11 +24,15 @@ import {
 import { GameService } from './game.service';
 import { CreateGameDto } from './dto/create-game.dto';
 import { RegisterForGameDto } from './dto/register-for-game.dto';
+import { SetMotionDto } from './dto/set-motion.dto';
+import { SubmitScoresDto } from './dto/submit-scores.dto';
+import { ImportGameResultDto } from './dto/import-game-result.dto';
 import {
   GameResponseDto,
   GameParticipantSimpleResponseDto,
 } from './dto/game-response.dto';
-import { ParticipantRole } from './entities/game-participant.entity';
+import { RoomAllocationResponseDto } from './dto/room-allocation-response.dto';
+import { ParticipantRole, ParticipantPosition } from './entities/game-participant.entity';
 import { GameStatus } from './entities/game.entity';
 
 @ApiTags('games')
@@ -191,6 +196,116 @@ export class GameController {
     }
   }
 
+  @Post(':id/allocate')
+  @ApiOperation({
+    summary: 'Allocate players to positions',
+    description: 'Allocates all registered players to BP debate positions (OG, OO, CG, CO). Converts judges to players if needed. Creates multiple rooms if necessary.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Game UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiQuery({
+    name: 'telegramId',
+    description: 'Telegram ID of the participant initiating allocation',
+    required: true,
+    example: '123456789',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Players allocated successfully',
+    type: [RoomAllocationResponseDto],
+  })
+  @ApiBadRequestResponse({
+    description: 'Not enough players or invalid game state',
+  })
+  @ApiNotFoundResponse({
+    description: 'Game not found',
+  })
+  @ApiForbiddenResponse({
+    description: 'Only participants can initiate allocation',
+  })
+  async allocatePlayers(
+    @Param('id') gameId: string,
+    @Query('telegramId') telegramId: string,
+  ): Promise<RoomAllocationResponseDto[]> {
+    if (!telegramId) {
+      throw new HttpException('telegramId is required', HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      const rooms = await this.gameService.allocatePlayers(
+        gameId,
+        parseInt(telegramId, 10),
+      );
+      return rooms;
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Allocation failed',
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Post(':id/motion')
+  @ApiOperation({
+    summary: 'Set motion and start game',
+    description: 'Sets the debate motion and starts the game. Only judges can perform this action.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Game UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiQuery({
+    name: 'telegramId',
+    description: 'Telegram ID of the judge setting the motion',
+    required: true,
+    example: '123456789',
+  })
+  @ApiBody({
+    description: 'Motion data',
+    type: SetMotionDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Motion set and game started successfully',
+    type: GameResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input or game not in allocating state',
+  })
+  @ApiNotFoundResponse({
+    description: 'Game not found',
+  })
+  @ApiForbiddenResponse({
+    description: 'Only judges can set the motion',
+  })
+  async setMotion(
+    @Param('id') gameId: string,
+    @Body() setMotionDto: SetMotionDto,
+    @Query('telegramId') telegramId: string,
+  ): Promise<GameResponseDto> {
+    if (!telegramId) {
+      throw new HttpException('telegramId is required', HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      const game = await this.gameService.setMotionAndStart(
+        gameId,
+        setMotionDto.motion,
+        parseInt(telegramId, 10),
+      );
+      return this.mapGameToResponse(game);
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to set motion',
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
   // Helper method to map Game entity to response DTO
   private mapGameToResponse(game: any): GameResponseDto {
     return {
@@ -209,6 +324,202 @@ export class GameController {
       updatedAt: game.updatedAt,
       participants: game.participants?.map((p: any) => this.mapParticipantToResponse(p)),
     };
+  }
+
+  @Post(':id/fill-with-bots')
+  @ApiOperation({
+    summary: '[TEST] Fill game with bot players and judges',
+    description: 'Adds fake bot participants to fill all player positions (8) and adds 1-2 judges. Bots have negative telegram IDs to avoid conflicts with real users.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Game UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiQuery({
+    name: 'telegramId',
+    description: 'Telegram ID of the user triggering this (must be a participant)',
+    required: true,
+    example: '123456789',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Bots added successfully',
+    type: GameResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Game not found or not in registration',
+  })
+  @ApiForbiddenResponse({
+    description: 'Only participants can trigger this',
+  })
+  async fillWithBots(
+    @Param('id') gameId: string,
+    @Query('telegramId') telegramId: string,
+  ): Promise<GameResponseDto> {
+    if (!telegramId) {
+      throw new HttpException('telegramId is required', HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      const game = await this.gameService.fillWithBots(
+        gameId,
+        parseInt(telegramId, 10),
+      );
+      return this.mapGameToResponse(game);
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to add bots',
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Post(':id/scores')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Submit speaker scores',
+    description: 'Submit speaker scores for each position (format: "score1/score2", e.g., "75/78"). Only judges can submit scores. Each judge can submit only once.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Game UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiQuery({
+    name: 'telegramId',
+    description: 'Telegram ID of the judge submitting scores',
+    required: true,
+    example: '123456789',
+  })
+  @ApiBody({
+    description: 'Scores for each position',
+    type: SubmitScoresDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Scores submitted successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid score format or game not active',
+  })
+  @ApiNotFoundResponse({
+    description: 'Game not found',
+  })
+  @ApiForbiddenResponse({
+    description: 'Only judges can submit scores',
+  })
+  @ApiConflictResponse({
+    description: 'Judge already submitted scores',
+  })
+  async submitScores(
+    @Param('id') gameId: string,
+    @Query('telegramId') telegramId: string,
+    @Body() submitScoresDto: SubmitScoresDto,
+  ): Promise<{ message: string }> {
+    if (!telegramId) {
+      throw new HttpException('telegramId is required', HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      await this.gameService.submitScores(
+        gameId,
+        parseInt(telegramId, 10),
+        submitScoresDto.openingGovernment,
+        submitScoresDto.openingOpposition,
+        submitScoresDto.closingGovernment,
+        submitScoresDto.closingOpposition,
+      );
+      return { message: 'Scores submitted successfully' };
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to submit scores',
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Post(':id/complete')
+  @ApiOperation({
+    summary: 'Complete/end the game',
+    description: 'Ends the game and sets status to COMPLETED. Only judges can complete the game.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Game UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiQuery({
+    name: 'telegramId',
+    description: 'Telegram ID of the judge completing the game',
+    required: true,
+    example: '123456789',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Game completed successfully',
+    type: GameResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Game not in progress',
+  })
+  @ApiNotFoundResponse({
+    description: 'Game not found',
+  })
+  @ApiForbiddenResponse({
+    description: 'Only judges can complete the game',
+  })
+  async completeGame(
+    @Param('id') gameId: string,
+    @Query('telegramId') telegramId: string,
+  ): Promise<GameResponseDto> {
+    if (!telegramId) {
+      throw new HttpException('telegramId is required', HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      const game = await this.gameService.completeGame(
+        gameId,
+        parseInt(telegramId, 10),
+      );
+      return this.mapGameToResponse(game);
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to complete game',
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Post('import-result')
+  @ApiOperation({
+    summary: '[TEST/ADMIN] Import game result',
+    description: 'Import a completed game result with players, judges, and scores. Useful for adding historical games or testing. Supports short games (OG+OO only) and ironman positions.',
+  })
+  @ApiBody({
+    description: 'Game result data',
+    type: ImportGameResultDto,
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Game imported successfully',
+    type: GameResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input data',
+  })
+  async importGameResult(
+    @Body() importDto: ImportGameResultDto,
+  ): Promise<GameResponseDto> {
+    try {
+      const game = await this.gameService.importGameResult(importDto);
+      return this.mapGameToResponse(game);
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to import game result',
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 
   // Helper method to map Participant entity to response DTO

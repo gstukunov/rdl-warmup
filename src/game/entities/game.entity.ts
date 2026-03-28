@@ -10,9 +10,22 @@ import { GameParticipant } from './game-participant.entity';
 
 export enum GameStatus {
   REGISTRATION = 'registration',
+  ALLOCATING = 'allocating',
   IN_PROGRESS = 'in_progress',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
+}
+
+export interface RoomAllocation {
+  roomNumber: number;
+  participants: {
+    telegramId: number;
+    position: string;
+    isIronman: boolean;
+  }[];
+  judges: {
+    telegramId: number;
+  }[];
 }
 
 // Using the existing games table from the debate system migration
@@ -75,6 +88,31 @@ export class Game {
   set maxParticipants(value: number) {
     if (!this.settings) this.settings = {};
     this.settings.maxParticipants = value;
+  }
+
+  // Room allocations stored in settings
+  get roomAllocations(): RoomAllocation[] {
+    const allocations = this.settings?.roomAllocations || [];
+    // Ensure judges array exists on each allocation (for backward compatibility)
+    return allocations.map((alloc: RoomAllocation) => ({
+      ...alloc,
+      judges: alloc.judges || []
+    }));
+  }
+
+  set roomAllocations(value: RoomAllocation[]) {
+    if (!this.settings) this.settings = {};
+    this.settings.roomAllocations = value;
+  }
+
+  // Check if allocation is complete
+  get isAllocated(): boolean {
+    return this.settings?.isAllocated || false;
+  }
+
+  set isAllocated(value: boolean) {
+    if (!this.settings) this.settings = {};
+    this.settings.isAllocated = value;
   }
 
   @OneToMany(() => GameParticipant, (participant) => participant.game)

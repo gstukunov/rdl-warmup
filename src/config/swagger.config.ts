@@ -21,6 +21,7 @@ export function setupSwagger(
     .addBearerAuth()
     .addTag('telegram', 'Telegram bot endpoints')
     .addTag('games', 'Game management endpoints for debates')
+    .addTag('allocation', 'Player position allocation and room management')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
