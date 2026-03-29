@@ -1,0 +1,24 @@
+FROM node:18-alpine
+
+# Install system dependencies
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++
+
+WORKDIR /usr/src/app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (needed for migrations)
+RUN npm ci
+
+# Copy source code and config
+COPY . .
+
+# Build TypeScript
+RUN npm run build
+
+# Run migrations
+CMD ["npm", "run", "migration:run:prod"]

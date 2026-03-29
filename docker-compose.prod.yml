@@ -35,9 +35,7 @@ services:
       retries: 5
 
   migrations:
-    build:
-      context: .
-      dockerfile: Dockerfile.migrations
+    image: ${IMAGE_NAME:-warmup-bot}:latest
     container_name: telegram_bot_migrations_prod
     environment:
       NODE_ENV: production
@@ -46,17 +44,18 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+    command: npm run migration:run:prod
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - telegram_network
     restart: 'no'
+    profiles:
+      - migrations
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${IMAGE_NAME:-warmup-bot}:latest
     container_name: telegram_bot_app_prod
     environment:
       NODE_ENV: production
@@ -71,6 +70,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      GAME_PASSWORD: ${GAME_PASSWORD}
     ports:
       - '3000:3000'
     depends_on:
@@ -78,8 +78,26 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      migrations:
-        condition: service_completed_successfully
+    networks:
+      - telegram_network
+    restart: always
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # Watchtower - автоматическое обновление контейнеров
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.docker/config.json:/config.json
+    environment:
+      WATCHTOWER_CLEANUP: true              # Удалять старые образы
+      WATCHTOWER_POLL_INTERVAL: 60          # Проверять каждые 60 секунд
+      WATCHTOWER_INCLUDE_RESTARTING: true   # Включать перезапускающиеся контейнеры
+      WATCHTOWER_ROLLING_RESTART: true      # Плавный перезапуск (без downtime)
+      WATCHTOWER_LABEL_ENABLE: true         # Следить только за контейнерами с лейблом
+      TZ: Europe/Moscow
     networks:
       - telegram_network
     restart: always
