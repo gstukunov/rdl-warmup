@@ -26,6 +26,9 @@ export interface RoomAllocation {
   judges: {
     telegramId: number;
   }[];
+  wings?: {
+    telegramId: number;
+  }[];
 }
 
 // Using the existing games table from the debate system migration

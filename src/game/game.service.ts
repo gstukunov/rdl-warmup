@@ -17,6 +17,7 @@ export interface AllocatedRoom {
   closingGovernment: Array<{ telegramId: number; username: string | null; firstName: string | null; isIronman: boolean }>;
   closingOpposition: Array<{ telegramId: number; username: string | null; firstName: string | null; isIronman: boolean }>;
   judges: Array<{ telegramId: number; username: string | null; firstName: string | null }>;
+  wings: Array<{ telegramId: number; username: string | null; firstName: string | null }>;
 }
 
 @Injectable()
@@ -119,7 +120,7 @@ export class GameService {
       throw new ConflictException('Вы уже зарегистрированы в этой игре');
     }
 
-    // Check if game is full (only count players, not judges)
+    // Check if game is full (only count players, not judges or wings)
     if (role === ParticipantRole.PLAYER) {
       const playerCount = await this.participantRepository.count({
         where: { gameId, role: ParticipantRole.PLAYER },
@@ -207,6 +208,33 @@ export class GameService {
     // Get all participants
     let players = game.participants?.filter(p => p.role === ParticipantRole.PLAYER && p.telegramId !== null) || [];
     let judges = game.participants?.filter(p => p.role === ParticipantRole.JUDGE && p.telegramId !== null) || [];
+    let wings = game.participants?.filter(p => p.role === ParticipantRole.WING && p.telegramId !== null) || [];
+
+    // If we have wings and not enough players for a full room (8 players), convert wings to players
+    const initialPlayerCount = players.length;
+    
+    // Check if we need to convert wings to players
+    // If there are less than 8 players total, we might need wings as players
+    if (wings.length > 0 && initialPlayerCount < 8) {
+      const playersNeeded = 8 - initialPlayerCount;
+      const wingsToConvert = Math.min(wings.length, playersNeeded);
+      const convertedWings = wings.slice(0, wingsToConvert);
+      wings = wings.slice(wingsToConvert);
+      
+      // Update wings to players in database
+      for (const wing of convertedWings) {
+        if (wing.id) {
+          await this.participantRepository.update(
+            { id: wing.id },
+            { role: ParticipantRole.PLAYER }
+          );
+          wing.role = ParticipantRole.PLAYER;
+        }
+      }
+      
+      // Add converted wings to players list
+      players = [...players, ...convertedWings];
+    }
 
     if (players.length < 2) {
       throw new BadRequestException('Недостаточно игроков для начала игры (минимум 2)');
@@ -216,9 +244,9 @@ export class GameService {
     players = this.shuffleArray([...players]);
 
     // Calculate number of complete rooms (8 players = 1 room)
-    const totalPlayers = players.length;
-    const fullRoomsCount = Math.floor(totalPlayers / 8);
-    const remainingPlayers = totalPlayers % 8;
+    const playersAfterConversion = players.length;
+    const fullRoomsCount = Math.floor(playersAfterConversion / 8);
+    const remainingPlayers = playersAfterConversion % 8;
 
     const rooms: AllocatedRoom[] = [];
     let playerIndex = 0;
@@ -236,12 +264,32 @@ export class GameService {
     if (remainingPlayers > 0) {
       const remainingRoomPlayers = players.slice(playerIndex);
       
-      // If we have judges and remaining players, convert some judges to players
+      // If we have remaining players, we might need to convert wings or judges to fill the room
       const minPlayersForShortGame = 4; // Minimum for Opening Gov + Opening Opp
       
       if (remainingPlayers >= minPlayersForShortGame) {
         // Can make a short game with just opening positions
         const room = this.allocateShortRoom(fullRoomsCount + 1, remainingRoomPlayers, judges);
+        rooms.push(room);
+      } else if (wings.length > 0 && (remainingPlayers + wings.length) >= minPlayersForShortGame) {
+        // Convert wings to players to fill the room (wings are converted before judges)
+        const wingsNeeded = minPlayersForShortGame - remainingPlayers;
+        const convertedWings = wings.slice(0, wingsNeeded);
+        wings = wings.slice(wingsNeeded);
+        
+        // Update wings to players in database
+        for (const wing of convertedWings) {
+          if (wing.id) {
+            await this.participantRepository.update(
+              { id: wing.id },
+              { role: ParticipantRole.PLAYER }
+            );
+            wing.role = ParticipantRole.PLAYER;
+          }
+        }
+        
+        const allPlayers = [...remainingRoomPlayers, ...convertedWings];
+        const room = this.allocateShortRoom(fullRoomsCount + 1, allPlayers, judges);
         rooms.push(room);
       } else if (judges.length > 0 && (remainingPlayers + judges.length) >= minPlayersForShortGame) {
         // Convert judges to players to fill the room
@@ -270,8 +318,9 @@ export class GameService {
       }
     }
 
-    // Distribute remaining judges across rooms
+    // Distribute remaining judges and wings across rooms
     this.distributeJudges(rooms, judges);
+    this.distributeWings(rooms, wings);
 
     // Save allocations to database
     await this.saveAllocations(gameId, rooms);
@@ -279,7 +328,7 @@ export class GameService {
     return rooms;
   }
 
-  private allocateRoom(roomNumber: number, players: GameParticipant[], judges: GameParticipant[]): AllocatedRoom {
+  private allocateRoom(roomNumber: number, players: GameParticipant[], judges: GameParticipant[], wings: GameParticipant[] = []): AllocatedRoom {
     // 2 players per position
     const room: AllocatedRoom = {
       roomNumber,
@@ -288,6 +337,7 @@ export class GameService {
       closingGovernment: [],
       closingOpposition: [],
       judges: [],
+      wings: [],
     };
 
     if (players.length >= 2 && players[0].telegramId && players[1].telegramId) {
@@ -321,7 +371,7 @@ export class GameService {
     return room;
   }
 
-  private allocateShortRoom(roomNumber: number, players: GameParticipant[], judges: GameParticipant[]): AllocatedRoom {
+  private allocateShortRoom(roomNumber: number, players: GameParticipant[], judges: GameParticipant[], wings: GameParticipant[] = []): AllocatedRoom {
     // Only Opening Government and Opening Opposition (4 players minimum)
     const room: AllocatedRoom = {
       roomNumber,
@@ -330,6 +380,7 @@ export class GameService {
       closingGovernment: [],
       closingOpposition: [],
       judges: [], // Judges will be added by distributeJudges
+      wings: [], // Wings will be added by distributeWings
     };
 
     if (players.length >= 2 && players[0].telegramId && players[1].telegramId) {
@@ -374,7 +425,7 @@ export class GameService {
     return room;
   }
 
-  private allocateShortRoomWithIronman(roomNumber: number, players: GameParticipant[], judges: GameParticipant[]): AllocatedRoom {
+  private allocateShortRoomWithIronman(roomNumber: number, players: GameParticipant[], judges: GameParticipant[], wings: GameParticipant[] = []): AllocatedRoom {
     // Create a short game with ironman positions
     const room: AllocatedRoom = {
       roomNumber,
@@ -383,6 +434,7 @@ export class GameService {
       closingGovernment: [],
       closingOpposition: [],
       judges: [], // Judges will be added by distributeJudges
+      wings: [], // Wings will be added by distributeWings
     };
 
     // Distribute players across positions with ironman
@@ -431,6 +483,26 @@ export class GameService {
     }
   }
 
+  private distributeWings(rooms: AllocatedRoom[], wings: GameParticipant[]): void {
+    // Distribute wings evenly across rooms (similar to judges, but wings don't have judging powers)
+    let wingIndex = 0;
+    const validWings = wings.filter(w => w.telegramId !== null);
+    
+    while (wingIndex < validWings.length) {
+      for (const room of rooms) {
+        if (wingIndex < validWings.length) {
+          const wing = validWings[wingIndex];
+          room.wings.push({
+            telegramId: wing.telegramId!,
+            username: wing.username,
+            firstName: wing.firstName
+          });
+          wingIndex++;
+        }
+      }
+    }
+  }
+
   private async saveAllocations(gameId: string, rooms: AllocatedRoom[]): Promise<void> {
     // Update participant positions in database
     for (const room of rooms) {
@@ -470,6 +542,7 @@ export class GameService {
         ...room.closingOpposition.map(p => ({ telegramId: p.telegramId, position: 'CO', isIronman: p.isIronman })),
       ],
       judges: room.judges.map(j => ({ telegramId: j.telegramId })),
+      wings: room.wings.map(w => ({ telegramId: w.telegramId })),
     }));
 
     // Use query builder for safer JSONB update

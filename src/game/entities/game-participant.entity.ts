@@ -12,6 +12,7 @@ export enum ParticipantRole {
   PLAYER = 'player',
   JUDGE = 'judge',
   BOTH = 'both',
+  WING = 'wing',
 }
 
 export enum ParticipantPosition {

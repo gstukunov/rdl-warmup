@@ -46,6 +46,26 @@ class AllocatedJudgeDto {
   firstName: string | null;
 }
 
+class AllocatedWingDto {
+  @ApiProperty({
+    description: 'Telegram ID of the wing (judge assistant)',
+    example: 123456789,
+  })
+  telegramId: number;
+
+  @ApiProperty({
+    description: 'Telegram username',
+    example: 'wing_user',
+  })
+  username: string | null;
+
+  @ApiProperty({
+    description: 'First name from Telegram',
+    example: 'Wing',
+  })
+  firstName: string | null;
+}
+
 export class RoomAllocationResponseDto {
   @ApiProperty({
     description: 'Room number',
@@ -82,4 +102,10 @@ export class RoomAllocationResponseDto {
     type: [AllocatedJudgeDto],
   })
   judges: AllocatedJudgeDto[];
+
+  @ApiProperty({
+    description: 'Wings (judge assistants) assigned to this room',
+    type: [AllocatedWingDto],
+  })
+  wings: AllocatedWingDto[];
 }

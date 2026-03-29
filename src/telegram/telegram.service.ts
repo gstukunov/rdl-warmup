@@ -140,10 +140,17 @@ export class TelegramService implements OnModuleInit {
         (p) => Number(p.telegramId) === telegramId,
       );
       const isJudge = participant?.role === ParticipantRole.JUDGE;
+      const isWing = participant?.role === ParticipantRole.WING;
 
       if (isJudge) {
         return Markup.keyboard([
           ['📝 Установить тему'],
+          ['📋 Состав комнат', '📋 Моя игра'],
+          ['◀️ Назад в меню'],
+        ]).resize();
+      } else if (isWing) {
+        // Wing (assistant judge) - same menu as regular player
+        return Markup.keyboard([
           ['📋 Состав комнат', '📋 Моя игра'],
           ['◀️ Назад в меню'],
         ]).resize();
@@ -161,12 +168,11 @@ export class TelegramService implements OnModuleInit {
         ]).resize();
       }
     } else if (activeGame.status === GameStatus.IN_PROGRESS) {
-      // Check if user is a judge
-      const isJudge = activeGame.participants?.some(
-        (p) =>
-          Number(p.telegramId) === telegramId &&
-          p.role === ParticipantRole.JUDGE,
+      // Check if user is a judge (wings are not judges - they can't input scores)
+      const participant = activeGame.participants?.find(
+        (p) => Number(p.telegramId) === telegramId,
       );
+      const isJudge = participant?.role === ParticipantRole.JUDGE;
 
       if (isJudge) {
         return Markup.keyboard([
@@ -198,6 +204,9 @@ export class TelegramService implements OnModuleInit {
       [
         Markup.button.callback('🎤 Спикер (игрок)', 'role_player'),
         Markup.button.callback('⚖️ Судья', 'role_judge'),
+      ],
+      [
+        Markup.button.callback('🪶 Винг (помощник судьи)', 'role_wing'),
       ],
       [Markup.button.callback('❌ Отмена', 'cancel_registration')],
     ]);
@@ -281,6 +290,10 @@ export class TelegramService implements OnModuleInit {
 
     this.bot.action('role_judge', async (ctx) => {
       await this.handleRoleSelection(ctx, ParticipantRole.JUDGE);
+    });
+
+    this.bot.action('role_wing', async (ctx) => {
+      await this.handleRoleSelection(ctx, ParticipantRole.WING);
     });
 
     this.bot.action('cancel_registration', async (ctx) => {
@@ -745,13 +758,18 @@ export class TelegramService implements OnModuleInit {
       (p) => Number(p.telegramId) === ctx.from!.id,
     );
 
+    const roleText = myParticipation?.role === ParticipantRole.JUDGE 
+      ? '⚖️ Судья' 
+      : myParticipation?.role === ParticipantRole.WING 
+        ? '🪶 Винг (помощник судьи)' 
+        : '🎤 Спикер';
     let message =
       `📋 Ваша активная игра:\n\n` +
       `🎮 ${freshGame.name}\n` +
       `Описание: ${freshGame.description || 'Нет описания'}\n` +
       `Участников: ${participantCount}/${freshGame.maxParticipants}\n` +
       `Статус: ${this.getStatusText(freshGame.status)}\n` +
-      `Ваша роль: ${myParticipation?.role === ParticipantRole.JUDGE ? '⚖️ Судья' : '🎤 Спикер'}`;
+      `Ваша роль: ${roleText}`;
 
     if (freshGame.motion) {
       message += `\n\n📝 Тема: ${freshGame.motion}`;
@@ -834,6 +852,13 @@ export class TelegramService implements OnModuleInit {
           });
         }
 
+        if (room.wings.length > 0) {
+          message += `🪶 Винги (помощники судьи):\n`;
+          room.wings.forEach((w) => {
+            message += `  ${w.firstName || w.username || 'Винг'}\n`;
+          });
+        }
+
         message += '\n';
       }
 
@@ -906,6 +931,13 @@ export class TelegramService implements OnModuleInit {
         });
       }
 
+      if (room.wings.length > 0) {
+        fullComposition += `🪶 Винги (помощники судьи):\n`;
+        room.wings.forEach((w) => {
+          fullComposition += `  ${w.firstName || w.username || 'Винг'}\n`;
+        });
+      }
+
       // Send personalized message to each participant
       for (const participant of allParticipants) {
         const participantId = Number(participant.telegramId);
@@ -964,6 +996,20 @@ export class TelegramService implements OnModuleInit {
           this.logger.warn(`Could not notify judge ${judge.telegramId}`);
         }
       }
+
+      // Also notify wings with full composition
+      for (const wing of room.wings) {
+        const wingMessage =
+          fullComposition +
+          `\n🎯 Вы — винг (помощник судьи)\n\n` +
+          `Ожидайте установки темы судьёй для начала игры.`;
+
+        try {
+          await this.bot.telegram.sendMessage(wing.telegramId!, wingMessage);
+        } catch (e) {
+          this.logger.warn(`Could not notify wing ${wing.telegramId}`);
+        }
+      }
     }
   }
 
@@ -1004,12 +1050,13 @@ export class TelegramService implements OnModuleInit {
 
     let message = `📋 Состав комнат для игры "${freshGame.name}":\n\n`;
 
-    // Group by position
+    // Group by position and role
     const og = participants.filter((p) => p.position === 'opening_government');
     const oo = participants.filter((p) => p.position === 'opening_opposition');
     const cg = participants.filter((p) => p.position === 'closing_government');
     const co = participants.filter((p) => p.position === 'closing_opposition');
     const judges = participants.filter((p) => p.role === 'judge');
+    const wings = participants.filter((p) => p.role === 'wing');
 
     if (og.length > 0) {
       message += `🏛️ Opening Government (OG):\n`;
@@ -1043,6 +1090,13 @@ export class TelegramService implements OnModuleInit {
       message += `⚖️ Судьи:\n`;
       judges.forEach(
         (j) => (message += `  ${j.firstName || j.username || 'Судья'}\n`),
+      );
+    }
+
+    if (wings.length > 0) {
+      message += `🪶 Винги (помощники судьи):\n`;
+      wings.forEach(
+        (w) => (message += `  ${w.firstName || w.username || 'Винг'}\n`),
       );
     }
 
@@ -1188,10 +1242,15 @@ export class TelegramService implements OnModuleInit {
       this.userSessions.delete(ctx.from.id);
 
       await ctx.answerCbQuery('Успешно!');
+      const roleDisplay = role === ParticipantRole.JUDGE 
+        ? '⚖️ Судья' 
+        : role === ParticipantRole.WING 
+          ? '🪶 Винг (помощник судьи)' 
+          : '🎤 Спикер';
       await ctx.editMessageText(
         `✅ Вы успешно зарегистрированы!\n\n` +
           `🎮 Игра: ${game.name}\n` +
-          `🎭 Роль: ${role === ParticipantRole.JUDGE ? '⚖️ Судья' : '🎤 Спикер'}`,
+          `🎭 Роль: ${roleDisplay}`,
       );
 
       // Show games menu
