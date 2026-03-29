@@ -51,60 +51,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || '22' }}
-          script: |
-            cd ~/warmup-bot
-            
-            # Save current version
-            echo "$(date): Deploying commit ${{ github.sha }}" >> deploy.log
-            
-            # Create .env file from secrets if not exists
-            if [ ! -f .env ]; then
-              echo "Creating .env file..."
-              cat > .env << 'EOF'
-            NODE_ENV=production
-            PORT=3000
-            DB_HOST=postgres
-            DB_PORT=5432
-            DB_USER=${{ secrets.DB_USER }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            DB_NAME=${{ secrets.DB_NAME }}
-            TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
-            TELEGRAM_WEBAPP_URL=${{ secrets.TELEGRAM_WEBAPP_URL }}
-            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-            GAME_PASSWORD=${{ secrets.GAME_PASSWORD }}
-            IMAGE_NAME=ghcr.io/${{ github.repository }}
-            EOF
-            fi
-            
-            # Login to GitHub Container Registry
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            # Pull latest images (this triggers watchtower to restart containers)
-            docker-compose -f docker-compose.prod.yml pull app
-            
-            # Run migrations
-            docker-compose -f docker-compose.prod.yml up -d migrations
-            
-            # Wait for migrations to complete
-            sleep 10
-            
-            # Start/Restart app (watchtower will handle this if running, but we ensure it's up)
-            docker-compose -f docker-compose.prod.yml up -d app
-            
-            # Clean up old images
-            docker image prune -f
-            
-            echo "✅ Deployment triggered! Watchtower will handle container updates."
-            echo "$(date): Deployment triggered" >> deploy.log
+      - name: Deployment Summary
+        run: |
+          echo "✅ Image built and pushed to ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          echo "🔄 Watchtower on the server will automatically pull and restart the container within 60 seconds"

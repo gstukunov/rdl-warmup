@@ -24,7 +24,8 @@ WORKDIR /usr/src/app
 RUN apk add --no-cache \
     python3 \
     make \
-    g++
+    g++ \
+    netcat-openbsd
 
 # Copy package files
 COPY package*.json ./
@@ -34,9 +35,14 @@ RUN npm ci --only=production
 
 # Copy built application from builder
 COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/typeorm.config.ts ./typeorm.config.ts
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Expose application port
 EXPOSE 3000
 
-# Start in production mode
-CMD ["node", "dist/main"]
+# Start in production mode with migrations
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
