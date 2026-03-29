@@ -81,15 +81,16 @@ export class TelegramService implements OnModuleInit {
   // Create main menu keyboard
   private async getMainMenuKeyboard(telegramId: number) {
     // Check if user has completed games and unrated judges
-    const unratedJudges = await this.gameService.getUnratedJudgesWithMotion(telegramId);
-    
+    const unratedJudges =
+      await this.gameService.getUnratedJudgesWithMotion(telegramId);
+
     if (unratedJudges.length > 0) {
       return Markup.keyboard([
         ['🎮 Игры', '📊 Профиль'],
         [`⭐ Оставить отзыв (${unratedJudges.length})`, '❓ Помощь'],
       ]).resize();
     }
-    
+
     return Markup.keyboard([['🎮 Игры', '📊 Профиль'], ['❓ Помощь']]).resize();
   }
 
@@ -205,9 +206,7 @@ export class TelegramService implements OnModuleInit {
         Markup.button.callback('🎤 Спикер (игрок)', 'role_player'),
         Markup.button.callback('⚖️ Судья', 'role_judge'),
       ],
-      [
-        Markup.button.callback('🪶 Винг (помощник судьи)', 'role_wing'),
-      ],
+      [Markup.button.callback('🪶 Винг (помощник судьи)', 'role_wing')],
       [Markup.button.callback('❌ Отмена', 'cancel_registration')],
     ]);
   }
@@ -233,7 +232,10 @@ export class TelegramService implements OnModuleInit {
 
     this.bot.hears('◀️ Назад в меню', async (ctx) => {
       if (!ctx.from) return;
-      await ctx.reply('Главное меню:', await this.getMainMenuKeyboard(ctx.from.id));
+      await ctx.reply(
+        'Главное меню:',
+        await this.getMainMenuKeyboard(ctx.from.id),
+      );
     });
 
     // Game actions
@@ -544,7 +546,7 @@ export class TelegramService implements OnModuleInit {
         await this.userRepository.save(user);
 
         await ctx.reply(
-          `Добро пожаловать в британский парламентский дебатный бот, ${telegramUser.first_name || 'спикер'}! 🎉\n\n` +
+          `Добро пожаловать в тренировочный бот RDL, ${telegramUser.first_name || 'спикер'}! 🎉\n\n` +
             `Вы успешно зарегистрированы.\n\n` +
             `Используйте меню ниже для навигации:`,
           await this.getMainMenuKeyboard(telegramUser.id),
@@ -578,12 +580,15 @@ export class TelegramService implements OnModuleInit {
       }
 
       const avgScore = this.calculateAverageScore(user.speakerScores);
-      
+
       // Get judge rating if user has been a judge
-      const judgeStats = await this.gameService.getJudgeAverageRating(user.telegramId);
+      const judgeStats = await this.gameService.getJudgeAverageRating(
+        user.telegramId,
+      );
       const hasJudgeStats = judgeStats.totalFeedbacks > 0;
 
-      let message = `📊 Ваш профиль\n\n` +
+      let message =
+        `📊 Ваш профиль\n\n` +
         `Имя: ${user.firstName || ''} ${user.lastName || ''}\n` +
         `Юзернейм: ${user.username ? '@' + user.username : 'Не указан'}\n\n` +
         `🏆 Статистика спикера:\n` +
@@ -591,7 +596,8 @@ export class TelegramService implements OnModuleInit {
         `• Средний спикерский балл: ${avgScore}\n`;
 
       if (hasJudgeStats) {
-        message += `\n⚖️ Статистика судьи:\n` +
+        message +=
+          `\n⚖️ Статистика судьи:\n` +
           `• Средняя оценка: ${judgeStats.averageScore}/10\n` +
           `• Получено отзывов: ${judgeStats.totalFeedbacks}\n`;
       }
@@ -605,7 +611,7 @@ export class TelegramService implements OnModuleInit {
 
   private async handleHelp(ctx: Context) {
     await ctx.reply(
-      `🤖 Британский парламентский дебатный бот\n\n` +
+      `🤖 Тренировочный бот RDL\n\n` +
         `📋 Доступные команды:\n\n` +
         `Общие команды:\n` +
         `/start — Регистрация/приветствие\n` +
@@ -758,11 +764,12 @@ export class TelegramService implements OnModuleInit {
       (p) => Number(p.telegramId) === ctx.from!.id,
     );
 
-    const roleText = myParticipation?.role === ParticipantRole.JUDGE 
-      ? '⚖️ Судья' 
-      : myParticipation?.role === ParticipantRole.WING 
-        ? '🪶 Винг (помощник судьи)' 
-        : '🎤 Спикер';
+    const roleText =
+      myParticipation?.role === ParticipantRole.JUDGE
+        ? '⚖️ Судья'
+        : myParticipation?.role === ParticipantRole.WING
+          ? '🪶 Винг (помощник судьи)'
+          : '🎤 Спикер';
     let message =
       `📋 Ваша активная игра:\n\n` +
       `🎮 ${freshGame.name}\n` +
@@ -1242,11 +1249,12 @@ export class TelegramService implements OnModuleInit {
       this.userSessions.delete(ctx.from.id);
 
       await ctx.answerCbQuery('Успешно!');
-      const roleDisplay = role === ParticipantRole.JUDGE 
-        ? '⚖️ Судья' 
-        : role === ParticipantRole.WING 
-          ? '🪶 Винг (помощник судьи)' 
-          : '🎤 Спикер';
+      const roleDisplay =
+        role === ParticipantRole.JUDGE
+          ? '⚖️ Судья'
+          : role === ParticipantRole.WING
+            ? '🪶 Винг (помощник судьи)'
+            : '🎤 Спикер';
       await ctx.editMessageText(
         `✅ Вы успешно зарегистрированы!\n\n` +
           `🎮 Игра: ${game.name}\n` +
@@ -1320,13 +1328,19 @@ export class TelegramService implements OnModuleInit {
     }
 
     // Handle NEW feedback flow - score input
-    if (session?.feedbackStep === 'enter_score' && session.selectedFeedbackItem) {
+    if (
+      session?.feedbackStep === 'enter_score' &&
+      session.selectedFeedbackItem
+    ) {
       await this.handleNewFeedbackScoreInput(ctx, text);
       return;
     }
 
     // Handle NEW feedback flow - comment input
-    if (session?.feedbackStep === 'enter_comment' && session.selectedFeedbackItem) {
+    if (
+      session?.feedbackStep === 'enter_comment' &&
+      session.selectedFeedbackItem
+    ) {
       await this.handleNewFeedbackCommentInput(ctx, text);
       return;
     }
@@ -1943,7 +1957,7 @@ export class TelegramService implements OnModuleInit {
 
       // Check user is a player (not judge)
       const participant = freshGame.participants?.find(
-        p => Number(p.telegramId) === telegramId,
+        (p) => Number(p.telegramId) === telegramId,
       );
       if (!participant || participant.role !== 'player') {
         await ctx.reply(
@@ -1958,7 +1972,7 @@ export class TelegramService implements OnModuleInit {
         freshGame.id,
         telegramId,
       );
-      
+
       if (unratedJudges.length === 0) {
         await ctx.reply(
           '✅ Вы уже оценили всех судей этой игры.',
@@ -1971,26 +1985,27 @@ export class TelegramService implements OnModuleInit {
       const session = this.getSession(telegramId);
       session.waitingFor = 'judge_feedback_judge';
       session.feedbackGameId = freshGame.id;
-      session.judgesToRate = unratedJudges.map(j => j.telegramId);
+      session.judgesToRate = unratedJudges.map((j) => j.telegramId);
       session.judgeNames = {};
       for (const j of unratedJudges) {
-        session.judgeNames[j.telegramId] = j.firstName || j.username || `Судья ${j.telegramId}`;
+        session.judgeNames[j.telegramId] =
+          j.firstName || j.username || `Судья ${j.telegramId}`;
       }
       session.currentJudgeIndex = 0;
       session.feedbackData = {};
 
       // Show first judge
       const firstJudge = unratedJudges[0];
-      const judgeName = firstJudge.firstName || firstJudge.username || `Судья ${firstJudge.telegramId}`;
+      const judgeName =
+        firstJudge.firstName ||
+        firstJudge.username ||
+        `Судья ${firstJudge.telegramId}`;
 
       await ctx.reply(
         `⭐ Оценка судей (шаг 1/${unratedJudges.length})\n\n` +
           `Судья: ${judgeName}\n\n` +
           `Отправьте оценку от 1 до 10:`,
-        Markup.keyboard([
-          ['◀️ Отмена'],
-          ['◀️ Назад в меню'],
-        ]).resize(),
+        Markup.keyboard([['◀️ Отмена'], ['◀️ Назад в меню']]).resize(),
       );
     } catch (error: any) {
       this.logger.error('Error starting judge feedback:', error);
@@ -2031,10 +2046,7 @@ export class TelegramService implements OnModuleInit {
     if (isNaN(score) || score < 1 || score > 10) {
       await ctx.reply(
         '❌ Некорректная оценка. Введите число от 1 до 10:',
-        Markup.keyboard([
-          ['◀️ Отмена'],
-          ['◀️ Назад в меню'],
-        ]).resize(),
+        Markup.keyboard([['◀️ Отмена'], ['◀️ Назад в меню']]).resize(),
       );
       return;
     }
@@ -2050,16 +2062,14 @@ export class TelegramService implements OnModuleInit {
     if (session.currentJudgeIndex! < session.judgesToRate!.length) {
       // Show next judge
       const nextJudgeId = session.judgesToRate![session.currentJudgeIndex!];
-      const judgeName = session.judgeNames?.[nextJudgeId] || `Судья ${nextJudgeId}`;
+      const judgeName =
+        session.judgeNames?.[nextJudgeId] || `Судья ${nextJudgeId}`;
 
       await ctx.reply(
         `⭐ Оценка судей (шаг ${session.currentJudgeIndex! + 1}/${session.judgesToRate!.length})\n\n` +
           `Судья: ${judgeName}\n\n` +
           `Отправьте оценку от 1 до 10:`,
-        Markup.keyboard([
-          ['◀️ Отмена'],
-          ['◀️ Назад в меню'],
-        ]).resize(),
+        Markup.keyboard([['◀️ Отмена'], ['◀️ Назад в меню']]).resize(),
       );
     } else {
       // All judges rated, ask for optional comment
@@ -2067,10 +2077,7 @@ export class TelegramService implements OnModuleInit {
       await ctx.reply(
         '💬 Хотите добавить комментарий? (необязательно)\n\n' +
           'Отправьте текст комментария или "Пропустить":',
-        Markup.keyboard([
-          ['Пропустить'],
-          ['◀️ Назад в меню'],
-        ]).resize(),
+        Markup.keyboard([['Пропустить'], ['◀️ Назад в меню']]).resize(),
       );
     }
   }
@@ -2146,7 +2153,8 @@ export class TelegramService implements OnModuleInit {
 
     try {
       // Get all unrated judges with motion info
-      const unratedJudges = await this.gameService.getUnratedJudgesWithMotion(telegramId);
+      const unratedJudges =
+        await this.gameService.getUnratedJudgesWithMotion(telegramId);
 
       if (unratedJudges.length === 0) {
         await ctx.reply(
@@ -2160,8 +2168,10 @@ export class TelegramService implements OnModuleInit {
       // Format: "Judge Name - Motion (truncated)"
       // Callback data limited to 64 bytes in Telegram, use short prefix and encode IDs compactly
       const buttons = unratedJudges.map((item) => {
-        const motionText = item.motion 
-          ? (item.motion.length > 25 ? item.motion.substring(0, 25) + '...' : item.motion)
+        const motionText = item.motion
+          ? item.motion.length > 25
+            ? item.motion.substring(0, 25) + '...'
+            : item.motion
           : 'Тема не указана';
         // Truncate judge name if needed to fit button text limit (64 chars)
         let judgeName = item.judgeName || `Судья ${item.judgeTelegramId}`;
@@ -2170,7 +2180,12 @@ export class TelegramService implements OnModuleInit {
         }
         const buttonText = `${judgeName} - ${motionText}`;
         // Use compact callback data: fb:<gameId>:<judgeId> (fb = feedback)
-        return [Markup.button.callback(buttonText, `fb:${item.gameId}:${item.judgeTelegramId}`)];
+        return [
+          Markup.button.callback(
+            buttonText,
+            `fb:${item.gameId}:${item.judgeTelegramId}`,
+          ),
+        ];
       });
 
       // Add cancel button
@@ -2178,8 +2193,8 @@ export class TelegramService implements OnModuleInit {
 
       await ctx.reply(
         `⭐ Оставить отзыв судье\n\n` +
-        `Выберите судью и игру для оценки:\n` +
-        `(${unratedJudges.length} ожидают оценки)`,
+          `Выберите судью и игру для оценки:\n` +
+          `(${unratedJudges.length} ожидают оценки)`,
         Markup.inlineKeyboard(buttons),
       );
     } catch (error: any) {
@@ -2192,15 +2207,20 @@ export class TelegramService implements OnModuleInit {
   }
 
   // Handle judge selection
-  private async handleJudgeSelection(ctx: Context, gameId: string, judgeTelegramId: number) {
+  private async handleJudgeSelection(
+    ctx: Context,
+    gameId: string,
+    judgeTelegramId: number,
+  ) {
     if (!ctx.from) return;
     const telegramId = ctx.from.id;
 
     try {
       // Get the unrated judges list again to find the selected one
-      const unratedJudges = await this.gameService.getUnratedJudgesWithMotion(telegramId);
+      const unratedJudges =
+        await this.gameService.getUnratedJudgesWithMotion(telegramId);
       const selectedItem = unratedJudges.find(
-        j => j.gameId === gameId && j.judgeTelegramId === judgeTelegramId
+        (j) => j.gameId === gameId && j.judgeTelegramId === judgeTelegramId,
       );
 
       if (!selectedItem) {
@@ -2218,7 +2238,8 @@ export class TelegramService implements OnModuleInit {
       session.selectedFeedbackItem = {
         gameId: selectedItem.gameId,
         judgeTelegramId: selectedItem.judgeTelegramId,
-        judgeName: selectedItem.judgeName || `Судья ${selectedItem.judgeTelegramId}`,
+        judgeName:
+          selectedItem.judgeName || `Судья ${selectedItem.judgeTelegramId}`,
         motion: selectedItem.motion,
         gameName: selectedItem.gameName,
       };
@@ -2228,12 +2249,12 @@ export class TelegramService implements OnModuleInit {
       } catch (e) {
         // Callback expired, continue
       }
-      
+
       await ctx.editMessageText(
         `⭐ Оценка судьи: ${session.selectedFeedbackItem.judgeName}\n\n` +
-        `📝 Тема дебатов: ${session.selectedFeedbackItem.motion || 'Не указана'}\n` +
-        `🎮 Игра: ${session.selectedFeedbackItem.gameName}\n\n` +
-        `Отправьте оценку от 1 до 10:`,
+          `📝 Тема дебатов: ${session.selectedFeedbackItem.motion || 'Не указана'}\n` +
+          `🎮 Игра: ${session.selectedFeedbackItem.gameName}\n\n` +
+          `Отправьте оценку от 1 до 10:`,
       );
       await ctx.reply(
         'Введите число от 1 до 10:',
@@ -2283,11 +2304,8 @@ export class TelegramService implements OnModuleInit {
 
     await ctx.reply(
       '💬 Хотите добавить комментарий? (необязательно)\n\n' +
-      'Отправьте текст комментария или "Пропустить":',
-      Markup.keyboard([
-        ['Пропустить'],
-        ['◀️ Отмена'],
-      ]).resize(),
+        'Отправьте текст комментария или "Пропустить":',
+      Markup.keyboard([['Пропустить'], ['◀️ Отмена']]).resize(),
     );
   }
 
@@ -2330,9 +2348,9 @@ export class TelegramService implements OnModuleInit {
 
       await ctx.reply(
         `✅ Спасибо за оценку!\n\n` +
-        `Судья: ${item.judgeName}\n` +
-        `Оценка: ${score}/10\n` +
-        `${comment ? `Комментарий: ${comment}` : 'Без комментария'}`,
+          `Судья: ${item.judgeName}\n` +
+          `Оценка: ${score}/10\n` +
+          `${comment ? `Комментарий: ${comment}` : 'Без комментария'}`,
         await this.getMainMenuKeyboard(telegramId),
       );
     } catch (error: any) {
