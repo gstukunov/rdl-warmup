@@ -10,12 +10,12 @@ until nc -z $DB_HOST $DB_PORT; do
 done
 echo "✅ Database is ready"
 
-# Run migrations (using compiled JS, no tsconfig-paths needed)
+# Run migrations (using compiled JS from dist/src)
 echo "🗄️ Running migrations..."
-node ./node_modules/typeorm/cli.js -d dist/typeorm.config.js migration:run || {
+node ./node_modules/typeorm/cli.js -d dist/src/typeorm.config.js migration:run || {
   echo "⚠️ Migration failed or already up to date"
 }
 
 # Start application
 echo "▶️ Starting NestJS application..."
-exec node dist/main
+exec node dist/src/main
