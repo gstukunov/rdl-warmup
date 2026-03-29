@@ -30,12 +30,11 @@ RUN apk add --no-cache \
 # Copy package files
 COPY package*.json ./
 
-# Install only production dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (needed for tsconfig-paths and migrations)
+RUN npm ci
 
 # Copy built application from builder
 COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/typeorm.config.ts ./typeorm.config.ts
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/

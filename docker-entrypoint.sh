@@ -10,9 +10,9 @@ until nc -z $DB_HOST $DB_PORT; do
 done
 echo "✅ Database is ready"
 
-# Run migrations
+# Run migrations (using compiled JS, no tsconfig-paths needed)
 echo "🗄️ Running migrations..."
-npm run migration:run:prod || {
+node ./node_modules/typeorm/cli.js -d dist/typeorm.config.js migration:run || {
   echo "⚠️ Migration failed or already up to date"
 }
 
