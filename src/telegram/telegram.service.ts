@@ -598,7 +598,7 @@ export class TelegramService implements OnModuleInit {
       if (hasJudgeStats) {
         message +=
           `\n⚖️ Статистика судьи:\n` +
-          `• Средняя оценка: ${judgeStats.averageScore}/10\n` +
+          `• Средняя оценка: ${judgeStats.averageScore}/7\n` +
           `• Получено отзывов: ${judgeStats.totalFeedbacks}\n`;
       }
 
@@ -633,7 +633,7 @@ export class TelegramService implements OnModuleInit {
         `/scores (или "оценки") — Ввести оценки спикеров\n` +
         `/endgame (или "завершить") — Завершить игру\n\n` +
         `⭐ После игры (только для игроков):\n` +
-        `/feedback (или "оценить судей") — Оценить судей (оценка 1-10)\n\n` +
+        `/feedback (или "оценить судей") — Оценить судей (оценка 1-7)\n\n` +
         `💡 Можно использовать как кнопки меню, так и текстовые команды!`,
       await this.getMainMenuKeyboard(ctx.from!.id),
     );
@@ -1821,8 +1821,7 @@ export class TelegramService implements OnModuleInit {
         confirmationMessage += `Closing Government: ${closingGovernment}\n`;
       if (closingOpposition)
         confirmationMessage += `Closing Opposition: ${closingOpposition}\n`;
-      confirmationMessage +=
-        '\nКогда все судьи введут оценки, можно завершить игру.';
+      confirmationMessage += '\nКогда будете готовы сможете завершить игру';
 
       // Clear session
       this.userSessions.delete(ctx.from.id);
@@ -2013,7 +2012,7 @@ export class TelegramService implements OnModuleInit {
       await ctx.reply(
         `⭐ Оценка судей (шаг 1/${unratedJudges.length})\n\n` +
           `Судья: ${judgeName}\n\n` +
-          `Отправьте оценку от 1 до 10:`,
+          `Отправьте оценку от 1 до 7:`,
         Markup.keyboard([['◀️ Отмена'], ['◀️ Назад в меню']]).resize(),
       );
     } catch (error: any) {
@@ -2052,9 +2051,9 @@ export class TelegramService implements OnModuleInit {
 
     // Parse score
     const score = parseInt(text.trim(), 10);
-    if (isNaN(score) || score < 1 || score > 10) {
+    if (isNaN(score) || score < 1 || score > 7) {
       await ctx.reply(
-        '❌ Некорректная оценка. Введите число от 1 до 10:',
+        '❌ Некорректная оценка. Введите число от 1 до 7:',
         Markup.keyboard([['◀️ Отмена'], ['◀️ Назад в меню']]).resize(),
       );
       return;
@@ -2077,7 +2076,7 @@ export class TelegramService implements OnModuleInit {
       await ctx.reply(
         `⭐ Оценка судей (шаг ${session.currentJudgeIndex! + 1}/${session.judgesToRate!.length})\n\n` +
           `Судья: ${judgeName}\n\n` +
-          `Отправьте оценку от 1 до 10:`,
+          `Оцените работу судьи (1-7)\n\nНасколько понятно судья объяснил сравнения команд?\n7 — Все сравнения кристально понятны 😊\n...\n1 — Все сравнения абсолютно непонятны 😫`,
         Markup.keyboard([['◀️ Отмена'], ['◀️ Назад в меню']]).resize(),
       );
     } else {
@@ -2263,10 +2262,10 @@ export class TelegramService implements OnModuleInit {
         `⭐ Оценка судьи: ${session.selectedFeedbackItem.judgeName}\n\n` +
           `📝 Тема дебатов: ${session.selectedFeedbackItem.motion || 'Не указана'}\n` +
           `🎮 Игра: ${session.selectedFeedbackItem.gameName}\n\n` +
-          `Отправьте оценку от 1 до 10:`,
+          `Оцените работу судьи (1-7)\n\nНасколько понятно судья объяснил сравнения команд?\n7 — Все сравнения кристально понятны 😊\n...\n1 — Все сравнения абсолютно непонятны 😫`,
       );
       await ctx.reply(
-        'Введите число от 1 до 10:',
+        'Введите число от 1 до 7:',
         Markup.keyboard([['◀️ Отмена']]).resize(),
       );
     } catch (error: any) {
@@ -2298,9 +2297,9 @@ export class TelegramService implements OnModuleInit {
 
     // Parse score
     const score = parseInt(text.trim(), 10);
-    if (isNaN(score) || score < 1 || score > 10) {
+    if (isNaN(score) || score < 1 || score > 7) {
       await ctx.reply(
-        '❌ Некорректная оценка. Введите число от 1 до 10:',
+        '❌ Некорректная оценка. Введите число от 1 до 7:',
         Markup.keyboard([['◀️ Отмена']]).resize(),
       );
       return;

@@ -25,7 +25,7 @@ export class JudgeFeedback {
   judgeTelegramId: number;
 
   @Column({ name: 'score', type: 'int' })
-  score: number; // 1-10 or any range
+  score: number; // 1-7 scale
 
   @Column({ name: 'feedback', type: 'text', nullable: true })
   feedback: string | null;

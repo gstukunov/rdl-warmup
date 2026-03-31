@@ -959,8 +959,9 @@ export class GameService {
     }
 
     // Check if ironman (only 1 player in position)
+    // Using loose equality (==) because isIronman can be string from JSONB
     const isIronman =
-      playersInPosition.length === 1 && playersInPosition[0].isIronman;
+      playersInPosition.length === 1 && playersInPosition[0].isIronman == true;
 
     // For ironman: save only the highest score
     // For normal team: save both scores
