@@ -929,8 +929,9 @@ export class GameService {
         room.participants.some(p => p.telegramId === playerTelegramId)
       );
       // Judges are stored separately in the judges array
+      // Using loose equality (==) because telegramId can be string from JSONB
       const judgeRoom = roomAllocations.find(room =>
-        room.judges?.some(j => j.telegramId === judgeTelegramId)
+        room.judges?.some(j => j.telegramId == judgeTelegramId)
       );
 
       if (!playerRoom || !judgeRoom || playerRoom.roomNumber !== judgeRoom.roomNumber) {
