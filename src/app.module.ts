@@ -4,8 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
 import configuration from './config/configuration';
+import { UserModule } from './user/user.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { GameModule } from './game/game.module';
+import { CleanArchitectureModule } from './clean-architecture.module';
+import { EventDrivenModule } from './event-driven.module';
 
 @Module({
   imports: [
@@ -44,8 +47,11 @@ import { GameModule } from './game/game.module';
       }),
       inject: [ConfigService],
     }),
+    UserModule,
     TelegramModule,
     GameModule,
+    CleanArchitectureModule, // Phase 3: Clean Architecture
+    EventDrivenModule,       // Phase 4: Event-Driven Architecture
   ],
 })
 export class AppModule {}

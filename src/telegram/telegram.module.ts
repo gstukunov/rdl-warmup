@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { TelegramService } from './telegram.service';
-import { User } from './entities/user.entity';
+import { UserModule } from '../user/user.module';
 import { GameModule } from '../game/game.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), GameModule],
+  imports: [UserModule, GameModule],
   providers: [TelegramService],
   exports: [TelegramService],
 })

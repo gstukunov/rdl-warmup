@@ -12,7 +12,7 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'telegramId', type: 'bigint', unique: true })
+  @Column({ name: 'telegram_id', type: 'bigint', unique: true })
   @Index()
   telegramId: number;
 
@@ -25,7 +25,7 @@ export class User {
   @Column({ name: 'last_name', type: 'varchar', length: 255, nullable: true })
   lastName: string | null;
 
-  @Column({ name: 'isActive', type: 'boolean', default: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;
 
   @Column({ name: 'preferences', type: 'jsonb', default: {} })
@@ -34,6 +34,10 @@ export class User {
   @Column({ name: 'games_played', type: 'int', default: 0 })
   gamesPlayed: number;
 
+  /**
+   * @deprecated Calculate from speaker_scores table instead
+   * This column will be removed in a future migration
+   */
   @Column({ name: 'speaker_scores', type: 'jsonb', default: [] })
   speakerScores: number[];
 

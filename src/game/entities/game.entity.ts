@@ -7,6 +7,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { GameParticipant } from './game-participant.entity';
+import { RoomAllocation } from './room-allocation.entity';
 
 export enum GameStatus {
   REGISTRATION = 'registration',
@@ -16,7 +17,10 @@ export enum GameStatus {
   CANCELLED = 'cancelled',
 }
 
-export interface RoomAllocation {
+/**
+ * @deprecated Use RoomAllocation entity instead. Kept for migration compatibility.
+ */
+export interface LegacyRoomAllocation {
   roomNumber: number;
   participants: {
     telegramId: number;
@@ -31,7 +35,6 @@ export interface RoomAllocation {
   }[];
 }
 
-// Using the existing games table from the debate system migration
 @Entity('games')
 export class Game {
   @PrimaryGeneratedColumn('uuid')
@@ -64,6 +67,17 @@ export class Game {
   @Column({ name: 'current_round', type: 'int', default: 0 })
   currentRound: number;
 
+  // New normalized columns (Phase 2)
+  @Column({ name: 'max_participants', type: 'int', default: 8 })
+  maxParticipants: number;
+
+  @Column({ name: 'created_by_telegram_id', type: 'bigint', nullable: true })
+  createdByTelegramId: number | null;
+
+  @Column({ name: 'is_allocated', type: 'boolean', default: false })
+  isAllocated: boolean;
+
+  // Legacy settings column (to be removed after migration)
   @Column({ name: 'settings', type: 'jsonb', default: {} })
   settings: Record<string, any>;
 
@@ -73,51 +87,42 @@ export class Game {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  // Virtual property for created_by_telegram_id (stored in settings)
-  get createdByTelegramId(): number | undefined {
-    return this.settings?.createdByTelegramId;
-  }
+  // Relationships
+  @OneToMany(() => GameParticipant, (participant) => participant.game)
+  participants: GameParticipant[];
 
-  set createdByTelegramId(value: number | undefined) {
-    if (!this.settings) this.settings = {};
-    this.settings.createdByTelegramId = value;
-  }
+  @OneToMany(() => RoomAllocation, (allocation) => allocation.game)
+  roomAllocations: RoomAllocation[];
 
-  // Virtual property for max_participants (stored in settings)
-  get maxParticipants(): number {
-    return this.settings?.maxParticipants || 8;
-  }
-
-  set maxParticipants(value: number) {
-    if (!this.settings) this.settings = {};
-    this.settings.maxParticipants = value;
-  }
-
-  // Room allocations stored in settings
-  get roomAllocations(): RoomAllocation[] {
+  /**
+   * @deprecated Use roomAllocations relationship instead
+   */
+  get legacyRoomAllocations(): LegacyRoomAllocation[] {
     const allocations = this.settings?.roomAllocations || [];
-    // Ensure judges array exists on each allocation (for backward compatibility)
-    return allocations.map((alloc: RoomAllocation) => ({
+    return allocations.map((alloc: LegacyRoomAllocation) => ({
       ...alloc,
       judges: alloc.judges || []
     }));
   }
 
-  set roomAllocations(value: RoomAllocation[]) {
-    if (!this.settings) this.settings = {};
-    this.settings.roomAllocations = value;
+  /**
+   * @deprecated Use maxParticipants column instead
+   */
+  get maxParticipantsFromSettings(): number {
+    return this.settings?.maxParticipants || 8;
   }
 
-  // Check if allocation is complete
-  get isAllocated(): boolean {
+  /**
+   * @deprecated Use createdByTelegramId column instead
+   */
+  get createdByFromSettings(): number | undefined {
+    return this.settings?.createdByTelegramId;
+  }
+
+  /**
+   * @deprecated Use isAllocated column instead
+   */
+  get isAllocatedFromSettings(): boolean {
     return this.settings?.isAllocated || false;
   }
-
-  set isAllocated(value: boolean) {
-    if (!this.settings) this.settings = {};
-    this.settings.isAllocated = value;
-  }
-
-  @OneToMany(() => GameParticipant, (participant) => participant.game)
-  participants: GameParticipant[];
 }

@@ -1,12 +1,13 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Telegraf, Context, Markup } from 'telegraf';
-import { User } from './entities/user.entity';
-import { GameService, AllocatedRoom } from '../game/game.service';
-import { Game, GameStatus } from '../game/entities/game.entity';
+import type { User } from '../user';
+import { UserService } from '../user';
+import { GameService } from '../game/game.service';
+import type { Game } from '../game/entities/game.entity';
+import { GameStatus } from '../game/entities/game.entity';
 import { ParticipantRole } from '../game/entities/game-participant.entity';
+import type { AllocatedRoom } from '../game/types';
 
 // Session state for multi-step interactions
 interface UserSession {
@@ -54,8 +55,7 @@ export class TelegramService implements OnModuleInit {
 
   constructor(
     private readonly configService: ConfigService,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly userService: UserService,
     private readonly gameService: GameService,
   ) {}
 
@@ -517,34 +517,25 @@ export class TelegramService implements OnModuleInit {
         return;
       }
 
-      // Check if user already exists
-      let user = await this.userRepository.findOne({
-        where: { telegramId: telegramUser.id },
+      // Find or create user
+      const userProfile = await this.userService.findOrCreate({
+        telegramId: telegramUser.id,
+        username: telegramUser.username || null,
+        firstName: telegramUser.first_name || null,
+        lastName: telegramUser.last_name || null,
       });
 
-      if (user) {
-        const avgScore = this.calculateAverageScore(user.speakerScores);
+      const profile = await this.userService.getUserProfile(telegramUser.id);
+
+      if (profile) {
         await ctx.reply(
-          `С возвращением, ${user.firstName || user.username || 'спикер'}! 🎉\n\n` +
+          `С возвращением, ${userProfile.firstName || userProfile.username || 'спикер'}! 🎉\n\n` +
             `Ваша статистика:\n` +
-            `• Игр сыграно: ${user.gamesPlayed}\n` +
-            `• Средний спикерский балл: ${avgScore}`,
+            `• Игр сыграно: ${userProfile.gamesPlayed}\n` +
+            `• Средний спикерский балл: ${profile.averageSpeakerScore}`,
           await this.getMainMenuKeyboard(telegramUser.id),
         );
       } else {
-        // Create new user
-        user = this.userRepository.create({
-          telegramId: telegramUser.id,
-          username: telegramUser.username || null,
-          firstName: telegramUser.first_name || null,
-          lastName: telegramUser.last_name || null,
-          gamesPlayed: 0,
-          speakerScores: [],
-          totalPoints: 0,
-        });
-
-        await this.userRepository.save(user);
-
         await ctx.reply(
           `Добро пожаловать в тренировочный бот RDL, ${telegramUser.first_name || 'спикер'}! 🎉\n\n` +
             `Вы успешно зарегистрированы.\n\n` +
@@ -567,11 +558,9 @@ export class TelegramService implements OnModuleInit {
         return;
       }
 
-      const user = await this.userRepository.findOne({
-        where: { telegramId: telegramUser.id },
-      });
+      const profile = await this.userService.getUserProfile(telegramUser.id);
 
-      if (!user) {
+      if (!profile) {
         await ctx.reply(
           'Вы ещё не зарегистрированы. Нажмите "🚀 Старт" для регистрации.',
           await this.getMainMenuKeyboard(telegramUser.id),
@@ -579,7 +568,7 @@ export class TelegramService implements OnModuleInit {
         return;
       }
 
-      const avgScore = this.calculateAverageScore(user.speakerScores);
+      const user = profile.user;
 
       // Get judge rating if user has been a judge
       const judgeStats = await this.gameService.getJudgeAverageRating(
@@ -593,7 +582,7 @@ export class TelegramService implements OnModuleInit {
         `Юзернейм: ${user.username ? '@' + user.username : 'Не указан'}\n\n` +
         `🏆 Статистика спикера:\n` +
         `• Игр сыграно: ${user.gamesPlayed}\n` +
-        `• Средний спикерский балл: ${avgScore}\n`;
+        `• Средний спикерский балл: ${profile.averageSpeakerScore}\n`;
 
       if (hasJudgeStats) {
         message +=
@@ -1483,26 +1472,14 @@ export class TelegramService implements OnModuleInit {
     return positionMap[position] || position;
   }
 
-  // Calculate average speaker score rounded to 1 decimal place
-  private calculateAverageScore(scores: number[]): string {
-    if (!scores || scores.length === 0) {
-      return '—';
-    }
-    const sum = scores.reduce((acc, score) => acc + score, 0);
-    const average = sum / scores.length;
-    return average.toFixed(1).replace('.', ',');
-  }
-
   // Method to get user by telegram ID (for future use in API)
   async getUserByTelegramId(telegramId: number): Promise<User | null> {
-    return this.userRepository.findOne({ where: { telegramId } });
+    return this.userService.getByTelegramId(telegramId);
   }
 
   // Method to get all users with stats (for API)
   async getAllUsersWithStats(): Promise<User[]> {
-    return this.userRepository.find({
-      order: { totalPoints: 'DESC' },
-    });
+    return this.userService.getAllUsersWithStats();
   }
 
   // ========== LEAVE GAME HANDLER ==========
@@ -1663,7 +1640,7 @@ export class TelegramService implements OnModuleInit {
     }
 
     // Determine which positions exist in the game
-    const roomAllocations = freshGame.roomAllocations;
+    const roomAllocations = freshGame.legacyRoomAllocations;
     const positionsToScore: string[] = [];
 
     if (roomAllocations && roomAllocations.length > 0) {
