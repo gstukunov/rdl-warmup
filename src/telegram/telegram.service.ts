@@ -1420,7 +1420,11 @@ export class TelegramService implements OnModuleInit {
         `🎉 Игра началась!\n\n` +
           `📝 Тема: ${game.motion}\n\n` +
           `Удачных дебатов!`,
-        await this.getGamesMenuKeyboard(ctx.from.id),
+        Markup.keyboard([
+          ['🎯 Ввести оценки'],
+          ['📋 Состав комнат', '📋 Моя игра'],
+          ['◀️ Назад в меню'],
+        ]).resize(),
       );
 
       // Notify all participants that game started
@@ -1825,7 +1829,12 @@ export class TelegramService implements OnModuleInit {
 
       await ctx.reply(
         confirmationMessage,
-        await this.getGamesMenuKeyboard(ctx.from.id),
+        Markup.keyboard([
+          ['🏆 Завершить игру'],
+          ['🎯 Ввести оценки'],
+          ['📋 Состав комнат', '📋 Моя игра'],
+          ['◀️ Назад в меню'],
+        ]).resize(),
       );
     } catch (error: any) {
       this.logger.error('Error saving scores:', error);
