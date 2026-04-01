@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Game, GameStatus } from '../game/entities/game.entity';
 import { GameParticipant, ParticipantRole } from '../game/entities/game-participant.entity';
 import { RoomPosition } from '../game/entities/room-participant.entity';
@@ -84,18 +84,23 @@ export class WebAppService {
       .orderBy('AVG(score.score)', 'DESC')
       .getRawMany();
 
-    // Get user details for speakers
-    const speakerTelegramIds = speakerScores.map((s) => Number(s.telegramId));
-    const speakerUsers = await this.userRepository.find({
-      where: speakerTelegramIds.map((id) => ({ telegramId: id })),
-    });
+    // Get user details for speakers using In operator
+    const speakerTelegramIds = speakerScores.map((s) => String(s.telegramId));
+    const speakerUsers = speakerTelegramIds.length > 0 
+      ? await this.userRepository.find({
+          where: { telegramId: In(speakerTelegramIds) },
+        })
+      : [];
+
+    // Create a map for quick lookup
+    const userMap = new Map(speakerUsers.map((u) => [String(u.telegramId), u]));
 
     const speakers: SpeakerStat[] = speakerScores.map((score) => {
-      const user = speakerUsers.find((u) => u.telegramId === Number(score.telegramId));
+      const user = userMap.get(String(score.telegramId));
       return {
         telegramId: Number(score.telegramId),
-        username: user?.username || null,
-        firstName: user?.firstName || 'Unknown',
+        username: user?.username ?? null,
+        firstName: user?.firstName ?? 'Unknown',
         gamesPlayed: parseInt(score.gamesPlayed, 10),
         averageScore: score.averageScore ? parseFloat(parseFloat(score.averageScore).toFixed(1)) : 0,
       };
@@ -113,17 +118,22 @@ export class WebAppService {
       .getRawMany();
 
     // Get user details for judges
-    const judgeTelegramIds = judgeFeedbacks.map((j) => Number(j.telegramId));
-    const judgeUsers = await this.userRepository.find({
-      where: judgeTelegramIds.map((id) => ({ telegramId: id })),
-    });
+    const judgeTelegramIds = judgeFeedbacks.map((j) => String(j.telegramId));
+    const judgeUsers = judgeTelegramIds.length > 0
+      ? await this.userRepository.find({
+          where: { telegramId: In(judgeTelegramIds) },
+        })
+      : [];
+
+    // Create a map for quick lookup
+    const judgeUserMap = new Map(judgeUsers.map((u) => [String(u.telegramId), u]));
 
     const judges: JudgeStat[] = judgeFeedbacks.map((feedback) => {
-      const user = judgeUsers.find((u) => u.telegramId === Number(feedback.telegramId));
+      const user = judgeUserMap.get(String(feedback.telegramId));
       return {
         telegramId: Number(feedback.telegramId),
-        username: user?.username || null,
-        firstName: user?.firstName || 'Unknown',
+        username: user?.username ?? null,
+        firstName: user?.firstName ?? 'Unknown',
         gamesJudged: parseInt(feedback.gamesJudged, 10),
         averageScore: feedback.averageScore
           ? parseFloat(parseFloat(feedback.averageScore).toFixed(1))
