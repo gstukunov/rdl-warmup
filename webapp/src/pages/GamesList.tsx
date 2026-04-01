@@ -11,7 +11,7 @@ import type { Game, GameDetails, UserProfile } from '../types';
 
 export const GamesList: React.FC = () => {
   const navigate = useNavigate();
-  const { theme, notificationOccurred, hideBackButton, isReady } = useTelegram();
+  const { theme, notificationOccurred, hideBackButton } = useTelegram();
   const [games, setGames] = useState<Game[]>([]);
   const [myGame, setMyGame] = useState<GameDetails | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -19,17 +19,9 @@ export const GamesList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    loadData();
     hideBackButton();
   }, []);
-
-  useEffect(() => {
-    if (isReady) {
-      // Small delay to ensure initData is set
-      setTimeout(() => {
-        loadData();
-      }, 100);
-    }
-  }, [isReady]);
 
   const loadData = async () => {
     try {
