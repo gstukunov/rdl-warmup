@@ -44,20 +44,6 @@ async function bootstrap() {
       prefix: '/webapp',
     });
     
-    // SPA fallback: отдаем index.html для всех путей /webapp/*
-    const httpAdapter = app.getHttpAdapter();
-    
-    // Важно: регистрируем после инициализации
-    httpAdapter.get('/webapp*', (req: any, res: any, next: any) => {
-      // Если запрос к API (начинается с /webapp/api) - пропускаем
-      if (req.path.startsWith('/webapp/api')) {
-        return next();
-      }
-      
-      // Иначе отдаем index.html
-      res.sendFile(indexPath);
-    });
-    
     Logger.log(`✅ WebApp static files configured at /webapp`, 'Bootstrap');
   } else {
     Logger.warn(`⚠️ WebApp files not found at ${webappPath}`, 'Bootstrap');
