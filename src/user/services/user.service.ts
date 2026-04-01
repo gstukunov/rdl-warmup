@@ -2,6 +2,8 @@ import { Injectable, Inject } from '@nestjs/common';
 import type { User } from '../entities/user.entity';
 import type { IUserRepository } from '../repositories/user.repository.interface';
 import { USER_REPOSITORY } from '../repositories/user.repository.interface';
+import type { ISpeakerScoreRepository } from '../../game/repositories/speaker-score.repository.interface';
+import { SPEAKER_SCORE_REPOSITORY } from '../../game/repositories/speaker-score.repository.interface';
 
 export interface CreateUserData {
   telegramId: number;
@@ -12,7 +14,6 @@ export interface CreateUserData {
 
 export interface UserStats {
   gamesPlayed: number;
-  speakerScores: number[];
   totalPoints: number;
 }
 
@@ -26,6 +27,8 @@ export class UserService {
   constructor(
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
+    @Inject(SPEAKER_SCORE_REPOSITORY)
+    private readonly speakerScoreRepository: ISpeakerScoreRepository,
   ) {}
 
   async findOrCreate(userData: CreateUserData): Promise<User> {
@@ -38,7 +41,6 @@ export class UserService {
         firstName: userData.firstName,
         lastName: userData.lastName || null,
         gamesPlayed: 0,
-        speakerScores: [],
         totalPoints: 0,
       });
     }
@@ -67,9 +69,6 @@ export class UserService {
       throw new Error(`User with telegramId ${telegramId} not found`);
     }
 
-    if (stats.speakerScores) {
-      user.speakerScores = [...(user.speakerScores || []), ...stats.speakerScores];
-    }
     if (stats.gamesPlayed !== undefined) {
       user.gamesPlayed += stats.gamesPlayed;
     }
@@ -86,7 +85,7 @@ export class UserService {
       return null;
     }
 
-    const averageSpeakerScore = this.calculateAverageScore(user.speakerScores);
+    const averageSpeakerScore = await this.getAverageSpeakerScore(telegramId);
 
     return {
       user,
@@ -94,12 +93,13 @@ export class UserService {
     };
   }
 
-  private calculateAverageScore(scores: number[]): string {
-    if (!scores || scores.length === 0) {
+  private async getAverageSpeakerScore(telegramId: number): Promise<string> {
+    const average = await this.speakerScoreRepository.getAverageScoreForUser(telegramId);
+    
+    if (average === null) {
       return '—';
     }
-    const sum = scores.reduce((acc, score) => acc + score, 0);
-    const average = sum / scores.length;
+    
     return average.toFixed(1).replace('.', ',');
   }
 }

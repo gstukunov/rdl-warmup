@@ -34,13 +34,6 @@ export class User {
   @Column({ name: 'games_played', type: 'int', default: 0 })
   gamesPlayed: number;
 
-  /**
-   * @deprecated Calculate from speaker_scores table instead
-   * This column will be removed in a future migration
-   */
-  @Column({ name: 'speaker_scores', type: 'jsonb', default: [] })
-  speakerScores: number[];
-
   @Column({ name: 'total_points', type: 'int', default: 0 })
   totalPoints: number;
 

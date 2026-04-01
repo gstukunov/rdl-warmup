@@ -44,7 +44,6 @@ export class UserMapper {
     typeOrmUser.totalPoints = domainUser.totalPoints;
     typeOrmUser.createdAt = domainUser.createdAt;
     typeOrmUser.updatedAt = domainUser.updatedAt;
-    typeOrmUser.speakerScores = []; // Deprecated, kept for compatibility
     typeOrmUser.preferences = {};
 
     return typeOrmUser;
