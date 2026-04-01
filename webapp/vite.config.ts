@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => ({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  base: '/webapp/',
   build: {
     outDir: '../public/webapp',
     emptyOutDir: true,
