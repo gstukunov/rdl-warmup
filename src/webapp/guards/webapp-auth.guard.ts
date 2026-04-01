@@ -3,6 +3,7 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac } from 'crypto';
@@ -23,53 +24,38 @@ export interface WebAppRequest {
 
 @Injectable()
 export class WebAppAuthGuard implements CanActivate {
+  private readonly logger = new Logger(WebAppAuthGuard.name);
+
   constructor(private readonly configService: ConfigService) {}
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     const initData = request.headers['x-telegram-init-data'] as string;
 
-    // DEV MODE: Allow requests without initData for testing
-    const isDev = this.configService.get('nodeEnv') !== 'production';
-    
-    if (!initData && isDev) {
-      // Mock user for development
-      request.telegramUser = {
-        id: 123456789,
-        first_name: 'Dev',
-        last_name: 'User',
-        username: 'devuser',
-      };
-      request.initData = '';
-      return true;
-    }
+    this.logger.debug(`Received initData: ${initData ? initData.substring(0, 100) + '...' : 'EMPTY'}`);
 
     if (!initData) {
+      this.logger.error('Missing Telegram init data header');
       throw new UnauthorizedException('Missing Telegram init data');
     }
 
-    // Validate init data in production
-    if (this.configService.get('nodeEnv') === 'production') {
-      const isValid = this.validateInitData(initData);
-      if (!isValid) {
-        // DEV FALLBACK: If validation fails but hash is "mock", allow in dev
-        if (isDev || initData.includes('mock')) {
-          const user = this.parseUserFromInitData(initData);
-          if (user) {
-            request.telegramUser = user;
-            request.initData = initData;
-            return true;
-          }
-        }
-        throw new UnauthorizedException('Invalid Telegram init data');
-      }
+    // Validate init data
+    const isValid = this.validateInitData(initData);
+    this.logger.debug(`Init data validation result: ${isValid}`);
+    
+    if (!isValid) {
+      this.logger.error('Invalid Telegram init data hash');
+      throw new UnauthorizedException('Invalid Telegram init data');
     }
 
     // Parse user from init data
     const user = this.parseUserFromInitData(initData);
     if (!user) {
+      this.logger.error('Failed to parse user from init data');
       throw new UnauthorizedException('Invalid user data');
     }
+
+    this.logger.log(`Authenticated user: ${user.id} (${user.username || user.first_name})`);
 
     // Attach user to request
     request.telegramUser = user;
@@ -81,6 +67,7 @@ export class WebAppAuthGuard implements CanActivate {
   private validateInitData(initData: string): boolean {
     const botToken = this.configService.get<string>('telegram.botToken');
     if (!botToken) {
+      this.logger.error('TELEGRAM_BOT_TOKEN not configured');
       return false;
     }
 
@@ -89,6 +76,7 @@ export class WebAppAuthGuard implements CanActivate {
       const hash = params.get('hash');
       
       if (!hash) {
+        this.logger.error('No hash in initData');
         return false;
       }
 
@@ -100,6 +88,9 @@ export class WebAppAuthGuard implements CanActivate {
         .map(([key, value]) => `${key}=${value}`)
         .join('\n');
 
+      this.logger.debug(`Data check string: ${dataCheckString.substring(0, 200)}...`);
+      this.logger.debug(`Received hash: ${hash}`);
+
       // Create secret key from bot token
       const secretKey = createHmac('sha256', 'WebAppData')
         .update(botToken)
@@ -110,8 +101,11 @@ export class WebAppAuthGuard implements CanActivate {
         .update(dataCheckString)
         .digest('hex');
 
+      this.logger.debug(`Calculated hash: ${calculatedHash}`);
+
       return calculatedHash === hash;
-    } catch {
+    } catch (error) {
+      this.logger.error(`Validation error: ${error.message}`);
       return false;
     }
   }
@@ -122,11 +116,13 @@ export class WebAppAuthGuard implements CanActivate {
       const userJson = params.get('user');
       
       if (!userJson) {
+        this.logger.error('No user field in initData');
         return null;
       }
 
       return JSON.parse(userJson) as TelegramUser;
-    } catch {
+    } catch (error) {
+      this.logger.error(`Parse error: ${error.message}`);
       return null;
     }
   }
