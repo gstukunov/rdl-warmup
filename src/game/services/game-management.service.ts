@@ -174,8 +174,12 @@ export class GameManagementService {
       throw new NotFoundException('Игра не найдена');
     }
 
-    game.isFeedbackHidden = hideFeedback;
+    // Use update() instead of save() to avoid entity tracking issues
+    await this.gameRepository.update(gameId, {
+      isFeedbackHidden: hideFeedback,
+    });
 
-    return this.gameRepository.save(game);
+    // Return fresh game data
+    return this.gameRepository.findById(gameId) as Promise<Game>;
   }
 }

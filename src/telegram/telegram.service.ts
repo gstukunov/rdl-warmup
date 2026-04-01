@@ -2334,7 +2334,7 @@ export class TelegramService implements OnModuleInit {
       await ctx.reply(
         `✅ Спасибо за оценку!\n\n` +
           `Судья: ${item.judgeName}\n` +
-          `Оценка: ${score}/10\n` +
+          `Оценка: ${score}/7\n` +
           `${comment ? `Комментарий: ${comment}` : 'Без комментария'}`,
         await this.getMainMenuKeyboard(telegramId),
       );
