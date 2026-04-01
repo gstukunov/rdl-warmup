@@ -11,41 +11,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
 
-  // Serve static files for webapp
-  const webappPath = join(process.cwd(), 'public', 'webapp');
-  
-  // Проверяем существование файлов
-  const indexPath = join(webappPath, 'index.html');
-  const exists = fs.existsSync(indexPath);
-  
-  Logger.log(`📁 WebApp path: ${webappPath}`, 'Bootstrap');
-  Logger.log(`📁 index.html exists: ${exists}`, 'Bootstrap');
-
-  if (exists) {
-    // Раздаем статические файлы
-    app.useStaticAssets(webappPath, {
-      prefix: '/webapp',
-    });
-    
-    // Fallback для SPA (React Router) - обрабатываем все пути под /webapp
-    const httpAdapter = app.getHttpAdapter();
-    
-    // Корневой путь /webapp
-    httpAdapter.get('/webapp', (req: any, res: any) => {
-      res.sendFile(indexPath);
-    });
-    
-    // Все остальные пути /webapp/*
-    httpAdapter.get('/webapp/*path', (req: any, res: any) => {
-      res.sendFile(indexPath);
-    });
-    
-    Logger.log(`✅ WebApp static files configured`, 'Bootstrap');
-  } else {
-    Logger.warn(`⚠️ WebApp files not found at ${webappPath}`, 'Bootstrap');
-  }
-
-  // Global validation pipe
+  // Global validation pipe (должен быть ДО маршрутов)
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -63,6 +29,29 @@ async function bootstrap() {
 
   // Setup Swagger (only in dev)
   setupSwagger(app, configService);
+
+  // Инициализируем приложение (регистрирует все контроллеры)
+  await app.init();
+
+  // Путь к webapp (ПОСЛЕ инициализации контроллеров)
+  const webappPath = join(process.cwd(), 'public', 'webapp');
+  const indexPath = join(webappPath, 'index.html');
+  const exists = fs.existsSync(indexPath);
+  
+  Logger.log(`📁 WebApp path: ${webappPath}`, 'Bootstrap');
+  Logger.log(`📁 index.html exists: ${exists}`, 'Bootstrap');
+
+  if (exists) {
+    // Настраиваем статические файлы с fallback
+    // Используем setViewEngine для правильного порядка
+    app.useStaticAssets(webappPath, {
+      prefix: '/webapp',
+    });
+    
+    Logger.log(`✅ WebApp static files configured`, 'Bootstrap');
+  } else {
+    Logger.warn(`⚠️ WebApp files not found at ${webappPath}`, 'Bootstrap');
+  }
 
   const port = configService.get('port');
   await app.listen(port);

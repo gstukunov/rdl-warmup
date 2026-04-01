@@ -22,7 +22,7 @@ import type {
   JoinGameRequestDto,
 } from './dtos/webapp.dto';
 
-@Controller('webapp')
+@Controller('api/webapp')
 @UseGuards(WebAppAuthGuard)
 export class WebAppController {
   constructor(private readonly webAppService: WebAppService) {}
