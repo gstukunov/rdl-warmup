@@ -12,13 +12,9 @@ export interface CreateUserData {
   lastName?: string | null;
 }
 
-export interface UserStats {
-  gamesPlayed: number;
-  totalPoints: number;
-}
-
 export interface UserProfile {
   user: User;
+  gamesPlayed: number;
   averageSpeakerScore: string;
 }
 
@@ -40,8 +36,6 @@ export class UserService {
         username: userData.username,
         firstName: userData.firstName,
         lastName: userData.lastName || null,
-        gamesPlayed: 0,
-        totalPoints: 0,
       });
     }
     
@@ -60,35 +54,20 @@ export class UserService {
     return this.userRepository.findAllWithStats();
   }
 
-  async updateUserStats(
-    telegramId: number, 
-    stats: Partial<UserStats>
-  ): Promise<void> {
-    const user = await this.userRepository.findByTelegramId(telegramId);
-    if (!user) {
-      throw new Error(`User with telegramId ${telegramId} not found`);
-    }
-
-    if (stats.gamesPlayed !== undefined) {
-      user.gamesPlayed += stats.gamesPlayed;
-    }
-    if (stats.totalPoints !== undefined) {
-      user.totalPoints += stats.totalPoints;
-    }
-
-    await this.userRepository.save(user);
-  }
-
   async getUserProfile(telegramId: number): Promise<UserProfile | null> {
     const user = await this.userRepository.findByTelegramId(telegramId);
     if (!user) {
       return null;
     }
 
-    const averageSpeakerScore = await this.getAverageSpeakerScore(telegramId);
+    const [gamesPlayed, averageSpeakerScore] = await Promise.all([
+      this.speakerScoreRepository.getGamesPlayedCount(telegramId),
+      this.getAverageSpeakerScore(telegramId),
+    ]);
 
     return {
       user,
+      gamesPlayed,
       averageSpeakerScore,
     };
   }

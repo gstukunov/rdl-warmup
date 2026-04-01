@@ -8,6 +8,5 @@ export type {
 } from './repositories/user.repository.interface';
 export type { 
   CreateUserData, 
-  UserStats, 
   UserProfile 
 } from './services/user.service';

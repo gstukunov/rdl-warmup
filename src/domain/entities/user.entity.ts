@@ -15,8 +15,6 @@ export interface UserProps {
   firstName: string | null;
   lastName: string | null;
   isActive: boolean;
-  gamesPlayed: number;
-  totalPoints: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,8 +33,6 @@ export class User {
   private _firstName: string | null;
   private _lastName: string | null;
   private _isActive: boolean;
-  private _gamesPlayed: number;
-  private _totalPoints: number;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
 
@@ -47,8 +43,6 @@ export class User {
     this._firstName = props.firstName;
     this._lastName = props.lastName;
     this._isActive = props.isActive;
-    this._gamesPlayed = props.gamesPlayed;
-    this._totalPoints = props.totalPoints;
     this._createdAt = props.createdAt;
     this._updatedAt = props.updatedAt;
   }
@@ -66,8 +60,6 @@ export class User {
       firstName: props.firstName,
       lastName: props.lastName ?? null,
       isActive: true,
-      gamesPlayed: 0,
-      totalPoints: 0,
       createdAt: now,
       updatedAt: now,
     });
@@ -110,14 +102,6 @@ export class User {
     return this._isActive;
   }
 
-  get gamesPlayed(): number {
-    return this._gamesPlayed;
-  }
-
-  get totalPoints(): number {
-    return this._totalPoints;
-  }
-
   get createdAt(): Date {
     return new Date(this._createdAt);
   }
@@ -135,19 +119,6 @@ export class User {
     if (props.username !== undefined) this._username = props.username;
     if (props.firstName !== undefined) this._firstName = props.firstName;
     if (props.lastName !== undefined) this._lastName = props.lastName;
-    this._updatedAt = new Date();
-  }
-
-  incrementGamesPlayed(): void {
-    this._gamesPlayed++;
-    this._updatedAt = new Date();
-  }
-
-  addPoints(points: number): void {
-    if (points < 0) {
-      throw new Error('Cannot add negative points');
-    }
-    this._totalPoints += points;
     this._updatedAt = new Date();
   }
 

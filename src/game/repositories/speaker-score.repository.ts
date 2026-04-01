@@ -80,4 +80,14 @@ export class SpeakerScoreRepository implements ISpeakerScoreRepository {
     
     return result?.average ? Number(result.average) : null;
   }
+
+  async getGamesPlayedCount(telegramId: number): Promise<number> {
+    const result = await this.repository
+      .createQueryBuilder('score')
+      .select('COUNT(DISTINCT score.gameId)', 'count')
+      .where('score.telegramId = :telegramId', { telegramId })
+      .getRawOne();
+    
+    return result?.count ? Number(result.count) : 0;
+  }
 }

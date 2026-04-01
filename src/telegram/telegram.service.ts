@@ -531,7 +531,7 @@ export class TelegramService implements OnModuleInit {
         await ctx.reply(
           `С возвращением, ${userProfile.firstName || userProfile.username || 'спикер'}! 🎉\n\n` +
             `Ваша статистика:\n` +
-            `• Игр сыграно: ${userProfile.gamesPlayed}\n` +
+            `• Игр сыграно: ${profile.gamesPlayed}\n` +
             `• Средний спикерский балл: ${profile.averageSpeakerScore}`,
           await this.getMainMenuKeyboard(telegramUser.id),
         );
@@ -581,7 +581,7 @@ export class TelegramService implements OnModuleInit {
         `Имя: ${user.firstName || ''} ${user.lastName || ''}\n` +
         `Юзернейм: ${user.username ? '@' + user.username : 'Не указан'}\n\n` +
         `🏆 Статистика спикера:\n` +
-        `• Игр сыграно: ${user.gamesPlayed}\n` +
+        `• Игр сыграно: ${profile.gamesPlayed}\n` +
         `• Средний спикерский балл: ${profile.averageSpeakerScore}\n`;
 
       if (hasJudgeStats) {

@@ -14,8 +14,6 @@ export interface UserDto {
   lastName: string | null;
   fullName: string;
   isActive: boolean;
-  gamesPlayed: number;
-  totalPoints: number;
   createdAt: Date;
 }
 
@@ -39,8 +37,6 @@ export function mapUserToDto(user: User): UserDto {
     lastName: user.lastName,
     fullName: user.fullName,
     isActive: user.isActive,
-    gamesPlayed: user.gamesPlayed,
-    totalPoints: user.totalPoints,
     createdAt: user.createdAt,
   };
 }

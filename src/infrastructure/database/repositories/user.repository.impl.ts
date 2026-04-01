@@ -44,7 +44,7 @@ export class UserRepositoryImpl implements IUserRepository {
 
   async findAllOrderedByPoints(): Promise<DomainUser[]> {
     const users = await this.repository.find({
-      order: { totalPoints: 'DESC' },
+      order: { createdAt: 'DESC' },
     });
     return users.map(UserMapper.toDomain);
   }

@@ -25,7 +25,7 @@ export class UserRepository implements IUserRepository {
 
   async findAllWithStats(): Promise<User[]> {
     return this.repository.find({
-      order: { totalPoints: 'DESC' },
+      order: { createdAt: 'DESC' },
     });
   }
 

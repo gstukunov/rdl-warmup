@@ -12,6 +12,7 @@ export interface ISpeakerScoreRepository {
   saveMany(scores: SpeakerScore[]): Promise<SpeakerScore[]>;
   delete(id: string): Promise<void>;
   getAverageScoreForUser(telegramId: number): Promise<number | null>;
+  getGamesPlayedCount(telegramId: number): Promise<number>;
 }
 
 export const SPEAKER_SCORE_REPOSITORY = Symbol('SPEAKER_SCORE_REPOSITORY');

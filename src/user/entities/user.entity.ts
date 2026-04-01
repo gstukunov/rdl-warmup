@@ -31,12 +31,6 @@ export class User {
   @Column({ name: 'preferences', type: 'jsonb', default: {} })
   preferences: Record<string, any>;
 
-  @Column({ name: 'games_played', type: 'int', default: 0 })
-  gamesPlayed: number;
-
-  @Column({ name: 'total_points', type: 'int', default: 0 })
-  totalPoints: number;
-
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
