@@ -11,12 +11,13 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   // Serve static files for webapp
-  app.useStaticAssets(join(__dirname, '..', 'public', 'webapp'), {
-    prefix: '/webapp/',
+  // Используем абсолютный путь для Docker
+  const webappPath = join(process.cwd(), 'public', 'webapp');
+  app.useStaticAssets(webappPath, {
+    prefix: '/webapp',
   });
   
-  // Serve index.html for all non-API routes (SPA fallback)
-  // This should be added after routes are registered, so we use a wildcard handler
+  Logger.log(`📁 Serving static files from: ${webappPath}`, 'Bootstrap');
 
   // Global validation pipe
   app.useGlobalPipes(
