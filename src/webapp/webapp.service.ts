@@ -21,6 +21,27 @@ import type {
   GameParticipantDto,
 } from './dtos/webapp.dto';
 
+interface SpeakerStat {
+  telegramId: number;
+  username: string | null;
+  firstName: string;
+  gamesPlayed: number;
+  averageScore: number;
+}
+
+interface JudgeStat {
+  telegramId: number;
+  username: string | null;
+  firstName: string;
+  gamesJudged: number;
+  averageScore: number;
+}
+
+export interface PublicStats {
+  speakers: SpeakerStat[];
+  judges: JudgeStat[];
+}
+
 @Injectable()
 export class WebAppService {
   constructor(
@@ -49,6 +70,68 @@ export class WebAppService {
       apiBaseUrl: this.configService.get<string>('telegram.webAppUrl') || '',
       environment: this.configService.get<'development' | 'production'>('nodeEnv') || 'development',
     };
+  }
+
+  async getPublicStats(): Promise<PublicStats> {
+    // Get speaker statistics - users with at least 1 game
+    const speakerScores = await this.speakerScoreRepository
+      .createQueryBuilder('score')
+      .select('score.telegramId', 'telegramId')
+      .addSelect('COUNT(DISTINCT score.gameId)', 'gamesPlayed')
+      .addSelect('AVG(score.score)', 'averageScore')
+      .groupBy('score.telegramId')
+      .having('COUNT(DISTINCT score.gameId) > 0')
+      .orderBy('AVG(score.score)', 'DESC')
+      .getRawMany();
+
+    // Get user details for speakers
+    const speakerTelegramIds = speakerScores.map((s) => Number(s.telegramId));
+    const speakerUsers = await this.userRepository.find({
+      where: speakerTelegramIds.map((id) => ({ telegramId: id })),
+    });
+
+    const speakers: SpeakerStat[] = speakerScores.map((score) => {
+      const user = speakerUsers.find((u) => u.telegramId === Number(score.telegramId));
+      return {
+        telegramId: Number(score.telegramId),
+        username: user?.username || null,
+        firstName: user?.firstName || 'Unknown',
+        gamesPlayed: parseInt(score.gamesPlayed, 10),
+        averageScore: score.averageScore ? parseFloat(parseFloat(score.averageScore).toFixed(1)) : 0,
+      };
+    });
+
+    // Get judge statistics
+    const judgeFeedbacks = await this.judgeFeedbackRepository
+      .createQueryBuilder('feedback')
+      .select('feedback.judgeTelegramId', 'telegramId')
+      .addSelect('COUNT(*)', 'gamesJudged')
+      .addSelect('AVG(feedback.score)', 'averageScore')
+      .groupBy('feedback.judgeTelegramId')
+      .having('COUNT(*) > 0')
+      .orderBy('AVG(feedback.score)', 'DESC')
+      .getRawMany();
+
+    // Get user details for judges
+    const judgeTelegramIds = judgeFeedbacks.map((j) => Number(j.telegramId));
+    const judgeUsers = await this.userRepository.find({
+      where: judgeTelegramIds.map((id) => ({ telegramId: id })),
+    });
+
+    const judges: JudgeStat[] = judgeFeedbacks.map((feedback) => {
+      const user = judgeUsers.find((u) => u.telegramId === Number(feedback.telegramId));
+      return {
+        telegramId: Number(feedback.telegramId),
+        username: user?.username || null,
+        firstName: user?.firstName || 'Unknown',
+        gamesJudged: parseInt(feedback.gamesJudged, 10),
+        averageScore: feedback.averageScore
+          ? parseFloat(parseFloat(feedback.averageScore).toFixed(1))
+          : 0,
+      };
+    });
+
+    return { speakers, judges };
   }
 
   async getOpenGames(telegramId: number): Promise<GameListItemDto[]> {

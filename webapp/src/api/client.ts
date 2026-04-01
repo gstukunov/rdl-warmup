@@ -6,7 +6,7 @@ class ApiClient {
   private initData: string = '';
 
   constructor() {
-    const baseURL = import.meta.env.VITE_API_URL || '/api/webapp';
+    const baseURL = import.meta.env.VITE_API_URL || '/api';
     
     this.client = axios.create({
       baseURL,

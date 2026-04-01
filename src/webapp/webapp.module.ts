@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WebAppController } from './webapp.controller';
+import { StatsController } from './stats.controller';
 import { WebAppService } from './webapp.service';
 import { Game } from '../game/entities/game.entity';
 import { GameParticipant } from '../game/entities/game-participant.entity';
@@ -24,7 +25,7 @@ import { RoomJudge } from '../game/entities/room-judge.entity';
       RoomJudge,
     ]),
   ],
-  controllers: [WebAppController],
+  controllers: [WebAppController, StatsController],
   providers: [WebAppService],
 })
 export class WebAppModule {}
