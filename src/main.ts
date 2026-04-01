@@ -5,19 +5,42 @@ import { ConfigService } from '@nestjs/config';
 import { setupSwagger } from './config/swagger.config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import * as fs from 'fs';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
 
   // Serve static files for webapp
-  // Используем абсолютный путь для Docker
   const webappPath = join(process.cwd(), 'public', 'webapp');
-  app.useStaticAssets(webappPath, {
-    prefix: '/webapp',
-  });
   
-  Logger.log(`📁 Serving static files from: ${webappPath}`, 'Bootstrap');
+  // Проверяем существование файлов
+  const indexPath = join(webappPath, 'index.html');
+  const exists = fs.existsSync(indexPath);
+  
+  Logger.log(`📁 WebApp path: ${webappPath}`, 'Bootstrap');
+  Logger.log(`📁 index.html exists: ${exists}`, 'Bootstrap');
+
+  if (exists) {
+    // Раздаем статические файлы
+    app.useStaticAssets(webappPath, {
+      prefix: '/webapp',
+    });
+    
+    // Fallback для SPA (React Router)
+    app.getHttpAdapter().get('/webapp/*', (req: any, res: any) => {
+      res.sendFile(indexPath);
+    });
+    
+    // Корневой путь webapp
+    app.getHttpAdapter().get('/webapp', (req: any, res: any) => {
+      res.sendFile(indexPath);
+    });
+    
+    Logger.log(`✅ WebApp static files configured`, 'Bootstrap');
+  } else {
+    Logger.warn(`⚠️ WebApp files not found at ${webappPath}`, 'Bootstrap');
+  }
 
   // Global validation pipe
   app.useGlobalPipes(
