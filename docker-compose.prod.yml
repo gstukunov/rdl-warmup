@@ -53,8 +53,6 @@ services:
     networks:
       - telegram_network
     restart: 'no'
-    profiles:
-      - migrations
 
   app:
     image: ${IMAGE_NAME}:latest
@@ -96,7 +94,7 @@ services:
       WATCHTOWER_CLEANUP: true
       WATCHTOWER_POLL_INTERVAL: 60
       WATCHTOWER_INCLUDE_RESTARTING: true
-      WATCHTOWER_ROLLING_RESTART: true
+      WATCHTOWER_ROLLING_RESTART: false
       WATCHTOWER_LABEL_ENABLE: true
       TZ: Europe/Moscow
     networks:

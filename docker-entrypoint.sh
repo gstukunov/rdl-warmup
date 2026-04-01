@@ -12,7 +12,7 @@ echo "✅ Database is ready"
 
 # Run migrations
 echo "🗄️ Running migrations..."
-node ./node_modules/typeorm/cli.js -d dist/typeorm.config.js migration:run || {
+node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d dist/typeorm.config.js migration:run || {
   echo "⚠️ Migration failed or already up to date, continuing..."
 }
 
