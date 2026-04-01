@@ -1,9 +1,9 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { initData } from '@telegram-apps/sdk';
 import type { ApiResponse } from '../types';
 
 class ApiClient {
   private client: AxiosInstance;
+  private initData: string = '';
 
   constructor() {
     const baseURL = import.meta.env.VITE_API_URL || '/api/webapp';
@@ -19,14 +19,15 @@ class ApiClient {
     // Request interceptor to add auth header
     this.client.interceptors.request.use(
       (config) => {
-        // Get initData from Telegram WebApp
-        const initDataRaw = this.getInitData();
-        console.log('[API Client] initData:', initDataRaw ? 'PRESENT' : 'EMPTY');
-        
-        if (initDataRaw) {
-          config.headers['X-Telegram-Init-Data'] = initDataRaw;
+        if (this.initData) {
+          config.headers['X-Telegram-Init-Data'] = this.initData;
         } else {
-          console.warn('[API Client] No initData available!');
+          // Try to get initData synchronously
+          const data = this.getInitData();
+          if (data) {
+            this.initData = data;
+            config.headers['X-Telegram-Init-Data'] = data;
+          }
         }
         return config;
       },
@@ -41,50 +42,64 @@ class ApiClient {
         return Promise.reject(error);
       }
     );
+
+    // Initialize initData
+    this.init();
+  }
+
+  private init() {
+    // Wait for Telegram WebApp to be ready
+    if (typeof window !== 'undefined') {
+      const tg = (window as any).Telegram?.WebApp;
+      
+      if (tg) {
+        // If already ready, get data immediately
+        if (tg.initData) {
+          this.initData = tg.initData;
+          console.log('[API] Got initData from Telegram WebApp');
+        } else {
+          // Wait for ready event
+          tg.ready();
+          // Try again after ready
+          setTimeout(() => {
+            if (tg.initData) {
+              this.initData = tg.initData;
+              console.log('[API] Got initData after ready');
+            }
+          }, 100);
+        }
+      } else {
+        console.warn('[API] Telegram WebApp not available');
+      }
+    }
   }
 
   private getInitData(): string {
-    // Try multiple methods to get initData
-    
-    // Method 1: From URL params (for testing)
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const tgWebAppData = urlParams.get('tgWebAppData');
-      if (tgWebAppData) {
-        console.log('[API Client] Got initData from URL');
-        return tgWebAppData;
-      }
+    // Direct access to window.Telegram
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.initData) {
+      return tg.initData;
     }
     
-    // Method 2: From Telegram SDK
-    try {
-      const raw = initData.raw();
-      if (raw) {
-        console.log('[API Client] Got initData from SDK');
-        return raw;
-      }
-    } catch (e) {
-      console.warn('[API Client] SDK initData failed:', e);
-    }
-    
-    // Method 3: From window.Telegram.WebApp (fallback)
-    try {
-      const tg = (window as any).Telegram?.WebApp;
-      if (tg?.initData) {
-        console.log('[API Client] Got initData from window.Telegram');
-        return tg.initData;
-      }
-    } catch (e) {
-      console.warn('[API Client] Window Telegram failed:', e);
+    // From URL params (for testing)
+    const urlParams = new URLSearchParams(window.location.search);
+    const tgWebAppData = urlParams.get('tgWebAppData');
+    if (tgWebAppData) {
+      return tgWebAppData;
     }
     
     // DEV fallback
     if (import.meta.env.DEV) {
-      console.log('[API Client] Using DEV mock data');
       return this.getMockInitData();
     }
     
     return '';
+  }
+
+  // Method to set initData from outside (e.g., from useTelegram hook)
+  setInitData(data: string) {
+    this.initData = data;
+    console.log('[API] initData set externally');
   }
 
   private getMockInitData(): string {

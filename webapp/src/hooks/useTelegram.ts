@@ -9,6 +9,7 @@ import {
   hapticFeedback,
   initData,
 } from '@telegram-apps/sdk';
+import { apiClient } from '../api/client';
 
 interface TelegramUser {
   id: number;
@@ -65,8 +66,8 @@ export function useTelegram(): UseTelegramReturn {
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
-    // Initialize Telegram SDK
     try {
+      // Initialize Telegram SDK
       init();
       
       // Mount components
@@ -86,16 +87,24 @@ export function useTelegram(): UseTelegramReturn {
 
       // Set ready
       miniApp.ready();
-      setIsReady(true);
 
-      // Get user from initData
+      // Get user and initData
       try {
         const initDataState = initData.state();
         if (initDataState && 'user' in initDataState && initDataState.user) {
           setUser(initDataState.user as TelegramUser);
         }
-      } catch {
-        // In dev mode, use mock user
+        
+        // Pass initData to API client
+        const rawInitData = initData.raw();
+        if (rawInitData) {
+          apiClient.setInitData(rawInitData);
+          console.log('[useTelegram] InitData passed to API client');
+        }
+      } catch (e) {
+        console.warn('[useTelegram] Failed to get initData:', e);
+        
+        // DEV fallback
         if (import.meta.env.DEV) {
           setUser({
             id: 123456789,
@@ -129,11 +138,12 @@ export function useTelegram(): UseTelegramReturn {
       try {
         viewport.bindCssVars();
       } catch {
-        // Fallback to window resize
         const handleResize = () => setViewportHeight(window.innerHeight);
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
       }
+
+      setIsReady(true);
 
       return () => {
         viewport.unmount();
@@ -141,20 +151,21 @@ export function useTelegram(): UseTelegramReturn {
         miniApp.unmount();
       };
     } catch (error) {
-      console.warn('Telegram SDK not available (running outside Telegram):', error);
-      // Dev mode fallback
-      setUser({
-        id: 123456789,
-        first_name: 'Test',
-        last_name: 'User',
-        username: 'testuser',
-        language_code: 'en',
-      });
-      setIsReady(true);
+      console.warn('[useTelegram] SDK not available:', error);
+      
+      if (import.meta.env.DEV) {
+        setUser({
+          id: 123456789,
+          first_name: 'Test',
+          last_name: 'User',
+          username: 'testuser',
+          language_code: 'en',
+        });
+        setIsReady(true);
+      }
     }
   }, []);
 
-  // Apply theme CSS variables
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('--tg-theme-bg-color', theme.bgColor);
@@ -170,20 +181,15 @@ export function useTelegram(): UseTelegramReturn {
     try {
       backButton.onClick(onClick);
       backButton.show();
-    } catch {
-      // Back button not supported
-    }
+    } catch {}
   }, []);
 
   const hideBackButton = useCallback(() => {
     try {
       backButton.hide();
-    } catch {
-      // Back button not supported
-    }
+    } catch {}
   }, []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mb = mainButton as any;
 
   const showMainButton = useCallback((text: string, onClick: () => void, options?: { color?: string }) => {
@@ -192,63 +198,47 @@ export function useTelegram(): UseTelegramReturn {
         text,
         isVisible: true,
         isEnabled: true,
+        bgColor: options?.color,
       });
-      if (options?.color) {
-        mb.setBgColor(options.color);
-      }
       mb.onClick(onClick);
-    } catch {
-      // Main button not supported
-    }
+    } catch {}
   }, [mb]);
 
   const hideMainButton = useCallback(() => {
     try {
       mb.setParams({ isVisible: false });
       mb.offClick();
-    } catch {
-      // Main button not supported
-    }
+    } catch {}
   }, [mb]);
 
   const enableMainButton = useCallback(() => {
     try {
       mb.setParams({ isEnabled: true });
-    } catch {
-      // Main button not supported
-    }
+    } catch {}
   }, [mb]);
 
   const disableMainButton = useCallback(() => {
     try {
       mb.setParams({ isEnabled: false });
-    } catch {
-      // Main button not supported
-    }
+    } catch {}
   }, [mb]);
 
   const impactOccurred = useCallback((style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => {
     try {
       hapticFeedback.impactOccurred(style);
-    } catch {
-      // Haptic feedback not supported
-    }
+    } catch {}
   }, []);
 
   const notificationOccurred = useCallback((type: 'error' | 'success' | 'warning') => {
     try {
       hapticFeedback.notificationOccurred(type);
-    } catch {
-      // Haptic feedback not supported
-    }
+    } catch {}
   }, []);
 
   const closeApp = useCallback(() => {
     try {
       miniApp.close();
-    } catch {
-      // Close not supported
-    }
+    } catch {}
   }, []);
 
   const expandApp = useCallback(() => {
@@ -257,9 +247,7 @@ export function useTelegram(): UseTelegramReturn {
         viewport.expand();
         setIsExpanded(true);
       }
-    } catch {
-      // Expand not supported
-    }
+    } catch {}
   }, []);
 
   return {
