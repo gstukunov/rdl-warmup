@@ -77,6 +77,9 @@ export class Game {
   @Column({ name: 'is_allocated', type: 'boolean', default: false })
   isAllocated: boolean;
 
+  @Column({ name: 'is_feedback_hidden', type: 'boolean', default: false })
+  isFeedbackHidden: boolean;
+
   // Legacy settings column (to be removed after migration)
   @Column({ name: 'settings', type: 'jsonb', default: {} })
   settings: Record<string, any>;

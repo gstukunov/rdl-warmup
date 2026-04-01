@@ -214,7 +214,7 @@ export class JudgeFeedbackService {
     );
 
     const completedGames = playerParticipations.filter(
-      (p) => p.game && p.game.status === GameStatus.COMPLETED,
+      (p) => p.game && p.game.status === GameStatus.COMPLETED && !p.game.isFeedbackHidden,
     );
 
     if (completedGames.length === 0) {

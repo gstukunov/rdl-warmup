@@ -128,6 +128,13 @@ export class GameResponseDto {
   })
   updatedAt: Date;
 
+  @ApiProperty({
+    description: 'Whether the game is hidden from feedback collection',
+    example: false,
+    default: false,
+  })
+  isFeedbackHidden: boolean;
+
   @ApiPropertyOptional({
     description: 'List of registered participants',
     type: [GameParticipantResponseDto],

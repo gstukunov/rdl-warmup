@@ -322,6 +322,7 @@ export class GameController {
       currentRound: game.currentRound || 0,
       createdAt: game.createdAt,
       updatedAt: game.updatedAt,
+      isFeedbackHidden: game.isFeedbackHidden || false,
       participants: game.participants?.map((p: any) => this.mapParticipantToResponse(p)),
     };
   }
@@ -517,6 +518,48 @@ export class GameController {
     } catch (error: any) {
       throw new HttpException(
         error.message || 'Failed to import game result',
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Post(':id/toggle-feedback-visibility')
+  @ApiOperation({
+    summary: '[ADMIN] Toggle feedback visibility for a game',
+    description: 'Hide or show a game in the feedback collection list. When hidden, players won\'t see this game in their "Leave feedback" options.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Game UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiQuery({
+    name: 'hide',
+    description: 'Set to true to hide the game from feedback collection, false to show',
+    required: true,
+    example: 'true',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Feedback visibility toggled successfully',
+    type: GameResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'Game not found',
+  })
+  async toggleFeedbackVisibility(
+    @Param('id') gameId: string,
+    @Query('hide') hide: string,
+  ): Promise<GameResponseDto> {
+    try {
+      const game = await this.gameService.toggleFeedbackVisibility(
+        gameId,
+        hide === 'true',
+      );
+      return this.mapGameToResponse(game);
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to toggle feedback visibility',
         error.status || HttpStatus.BAD_REQUEST,
       );
     }

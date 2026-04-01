@@ -163,4 +163,19 @@ export class GameManagementService {
 
     return this.gameRepository.save(game);
   }
+
+  async toggleFeedbackVisibility(
+    gameId: string,
+    hideFeedback: boolean,
+  ): Promise<Game> {
+    const game = await this.gameRepository.findById(gameId);
+
+    if (!game) {
+      throw new NotFoundException('Игра не найдена');
+    }
+
+    game.isFeedbackHidden = hideFeedback;
+
+    return this.gameRepository.save(game);
+  }
 }

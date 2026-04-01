@@ -229,4 +229,13 @@ export class GameService {
     // to use the new repository pattern
     throw new Error('Import functionality needs to be refactored to use new architecture');
   }
+
+  // ==================== Admin ====================
+
+  async toggleFeedbackVisibility(
+    gameId: string,
+    hideFeedback: boolean,
+  ): Promise<Game> {
+    return this.managementService.toggleFeedbackVisibility(gameId, hideFeedback);
+  }
 }
