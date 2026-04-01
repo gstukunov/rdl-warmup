@@ -11,7 +11,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
 
-  // Global validation pipe (должен быть ДО маршрутов)
+  // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -30,10 +30,7 @@ async function bootstrap() {
   // Setup Swagger (only in dev)
   setupSwagger(app, configService);
 
-  // Инициализируем приложение (регистрирует все контроллеры)
-  await app.init();
-
-  // Путь к webapp (ПОСЛЕ инициализации контроллеров)
+  // Путь к webapp
   const webappPath = join(process.cwd(), 'public', 'webapp');
   const indexPath = join(webappPath, 'index.html');
   const exists = fs.existsSync(indexPath);
@@ -42,13 +39,26 @@ async function bootstrap() {
   Logger.log(`📁 index.html exists: ${exists}`, 'Bootstrap');
 
   if (exists) {
-    // Настраиваем статические файлы с fallback
-    // Используем setViewEngine для правильного порядка
+    // Раздаем статические файлы
     app.useStaticAssets(webappPath, {
       prefix: '/webapp',
     });
     
-    Logger.log(`✅ WebApp static files configured`, 'Bootstrap');
+    // SPA fallback: отдаем index.html для всех путей /webapp/*
+    const httpAdapter = app.getHttpAdapter();
+    
+    // Важно: регистрируем после инициализации
+    httpAdapter.get('/webapp*', (req: any, res: any, next: any) => {
+      // Если запрос к API (начинается с /webapp/api) - пропускаем
+      if (req.path.startsWith('/webapp/api')) {
+        return next();
+      }
+      
+      // Иначе отдаем index.html
+      res.sendFile(indexPath);
+    });
+    
+    Logger.log(`✅ WebApp static files configured at /webapp`, 'Bootstrap');
   } else {
     Logger.warn(`⚠️ WebApp files not found at ${webappPath}`, 'Bootstrap');
   }
