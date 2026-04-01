@@ -27,13 +27,16 @@ async function bootstrap() {
       prefix: '/webapp',
     });
     
-    // Fallback для SPA (React Router)
-    app.getHttpAdapter().get('/webapp/*', (req: any, res: any) => {
+    // Fallback для SPA (React Router) - обрабатываем все пути под /webapp
+    const httpAdapter = app.getHttpAdapter();
+    
+    // Корневой путь /webapp
+    httpAdapter.get('/webapp', (req: any, res: any) => {
       res.sendFile(indexPath);
     });
     
-    // Корневой путь webapp
-    app.getHttpAdapter().get('/webapp', (req: any, res: any) => {
+    // Все остальные пути /webapp/*
+    httpAdapter.get('/webapp/*path', (req: any, res: any) => {
       res.sendFile(indexPath);
     });
     
