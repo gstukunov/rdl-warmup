@@ -9,6 +9,7 @@ import { TelegramModule } from './telegram/telegram.module';
 import { GameModule } from './game/game.module';
 import { CleanArchitectureModule } from './clean-architecture.module';
 import { EventDrivenModule } from './event-driven.module';
+import { WebAppModule } from './webapp/webapp.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { EventDrivenModule } from './event-driven.module';
     GameModule,
     CleanArchitectureModule, // Phase 3: Clean Architecture
     EventDrivenModule,       // Phase 4: Event-Driven Architecture
+    WebAppModule,            // Telegram Mini App
   ],
 })
 export class AppModule {}

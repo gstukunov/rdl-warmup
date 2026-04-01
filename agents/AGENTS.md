@@ -12,6 +12,7 @@
 6. [Common Tasks](#common-tasks)
 7. [Technology Stack](#technology-stack)
 8. [Environment Variables](#environment-variables)
+9. [Telegram Mini App](#telegram-mini-app)
 
 ---
 
@@ -40,6 +41,13 @@ This project has been refactored through 4 architectural phases. All phases coex
 - Event bus (in-memory, replaceable with Redis/RabbitMQ)
 - Event handlers for async processing
 - Event store for persistence
+
+### Phase 5: Telegram Mini App ✅
+- React-based SPA served from NestJS backend
+- Telegram SDK integration for native UI
+- Secure authentication via Telegram `initData`
+- Mobile-first responsive design
+- **See detailed docs: [./WEBAPP.md](./WEBAPP.md)**
 
 ### Current Architecture Flow
 
@@ -152,6 +160,15 @@ src/
 │
 ├── telegram/                        # Telegram Bot module
 │   └── telegram.service.ts          # Bot handlers
+│
+├── webapp/                          # Telegram Mini App API
+│   ├── webapp.controller.ts         # REST endpoints
+│   ├── webapp.service.ts            # Business logic
+│   ├── webapp.module.ts             # Module definition
+│   ├── guards/
+│   │   └── webapp-auth.guard.ts     # Telegram auth validation
+│   └── dtos/
+│       └── webapp.dto.ts            # API DTOs
 │
 ├── database/migrations/             # TypeORM migrations
 ├── config/                          # Configuration
@@ -441,6 +458,16 @@ npx tsc --noEmit
 - `GET /games-v2/:id` - Get game by ID
 - `POST /games-v2` - Create game
 
+**WebApp API** (Mini App):
+- `GET /webapp/config` - Get bot config
+- `GET /webapp/games` - List open games
+- `GET /webapp/games/:id` - Get game details
+- `GET /webapp/games/my` - Get user's active game
+- `POST /webapp/games/:id/join` - Join a game
+- `POST /webapp/games/:id/leave` - Leave a game
+- `GET /webapp/profile` - Get user profile
+- `GET /webapp/profile/judge-stats` - Get judge stats
+
 ---
 
 ## Technology Stack
@@ -455,6 +482,9 @@ npx tsc --noEmit
 | Bot Framework | Telegraf |
 | API Docs | Swagger/OpenAPI |
 | Validation | class-validator |
+| **Mini App** | **React 18 + Vite** |
+| Mini App SDK | @telegram-apps/sdk |
+| Styling | CSS Variables (Telegram Theme) |
 
 ---
 
@@ -480,7 +510,11 @@ REDIS_PASSWORD=
 
 # Telegram
 TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_BOT_USERNAME=your_bot_username
 TELEGRAM_WEBAPP_URL=https://your-webapp.com
+
+# WebApp (NEW)
+WEBAPP_DEV_URL=http://localhost:5173
 
 # Game
 GAME_PASSWORD=secret_password_for_creating_games
@@ -566,10 +600,167 @@ import { GAME_REPOSITORY } from '...';
 | Run migrations | `npm run migration:run` |
 | Start dev | `npm run start:dev` |
 | Build | `npm run build` |
+| Build server only | `npm run build:server` |
+| WebApp dev | `npm run webapp:dev` |
+| WebApp build | `npm run webapp:build` |
 | DB CLI | `npm run docker:psql` |
 | Redis CLI | `npm run docker:redis` |
 
 ---
 
-*Last updated: March 2026*
-*Architecture: 4-phase refactor complete*
+## Telegram Mini App
+
+The project now includes a **Telegram Mini App** - a React-based SPA that users can open directly from the Telegram bot.
+
+### Quick Start
+
+```bash
+# Install webapp dependencies
+npm run webapp:install
+
+# Build webapp for production
+npm run webapp:build
+
+# Dev mode (with hot reload on http://localhost:5173)
+npm run webapp:dev
+```
+
+### Architecture
+
+```
+webapp/                              # React frontend
+├── src/
+│   ├── api/                         # API clients
+│   │   ├── client.ts                # Axios client with auth
+│   │   ├── games.ts                 # Games API
+│   │   └── user.ts                  # User API
+│   ├── components/                  # Reusable components
+│   │   ├── Layout.tsx               # Page layout
+│   │   ├── Card.tsx                 # Card component
+│   │   ├── Button.tsx               # Button component
+│   │   └── GameStatus.tsx           # Status badge
+│   ├── hooks/                       # Custom hooks
+│   │   └── useTelegram.ts           # Telegram SDK hook
+│   ├── pages/                       # Page components
+│   │   ├── GamesList.tsx            # Games list page
+│   │   ├── GameDetails.tsx          # Game details page
+│   │   └── Profile.tsx              # User profile page
+│   ├── types/                       # TypeScript types
+│   │   └── index.ts
+│   ├── App.tsx                      # Main app component
+│   └── main.tsx                     # Entry point
+├── index.html
+├── vite.config.ts
+└── package.json
+
+public/webapp/                       # Build output (served by NestJS)
+├── index.html
+└── assets/
+    └── ...
+```
+
+### Features
+
+- **Games List**: View open games and user's active game
+- **Game Details**: See game info, participants, join/leave
+- **Profile**: View user stats and judge ratings
+- **Telegram Integration**: Native back button, main button, haptic feedback
+- **Theme Support**: Automatically adapts to Telegram's color scheme
+
+### Authentication
+
+The Mini App uses Telegram's built-in authentication:
+1. User opens app from Telegram bot
+2. Frontend receives `initData` from Telegram SDK
+3. Frontend sends `X-Telegram-Init-Data` header with each request
+4. Backend validates the hash using bot token
+5. User identity extracted from initData
+
+### Environment Variables
+
+```bash
+# Required for Mini App
+TELEGRAM_BOT_USERNAME=your_bot_username
+TELEGRAM_WEBAPP_URL=https://your-domain.com/webapp
+
+# Dev mode
+WEBAPP_DEV_URL=http://localhost:5173
+```
+
+### Pages
+
+| Route | Description |
+|-------|-------------|
+| `/` | Games list - shows open games and user's active game |
+| `/games/:id` | Game details - join/leave, see participants |
+| `/profile` | User profile - stats, ratings |
+
+### API Endpoints
+
+All endpoints are prefixed with `/webapp` and require Telegram authentication:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/webapp/config` | Get bot config |
+| GET | `/webapp/games` | List open games |
+| GET | `/webapp/games/:id` | Get game details |
+| GET | `/webapp/games/my` | Get user's active game |
+| POST | `/webapp/games/:id/join` | Join a game |
+| POST | `/webapp/games/:id/leave` | Leave a game |
+| GET | `/webapp/profile` | Get user profile |
+| GET | `/webapp/profile/judge-stats` | Get judge stats |
+
+### Development Mode
+
+In development mode, the API client uses mock initData:
+```typescript
+// Mock user for dev
+{
+  id: 123456789,
+  first_name: 'Test',
+  last_name: 'User',
+  username: 'testuser'
+}
+```
+
+### Production Deployment
+
+#### Using Docker Compose (Recommended)
+
+See detailed server setup guide: **[../SERVER_SETUP.md](../SERVER_SETUP.md)**
+
+Quick deployment:
+```bash
+# 1. Configure environment
+cp .env.example .env
+# Edit .env with your values
+
+# 2. Deploy
+./deploy.sh
+```
+
+#### Manual Build
+
+1. Build the webapp: `npm run webapp:build`
+2. Build the server: `npm run build:server`
+3. Static files are served from `public/webapp/`
+4. Ensure `TELEGRAM_WEBAPP_URL` points to your domain + `/webapp`
+
+### GitHub Actions CI/CD
+
+The repository includes automated CI/CD:
+- On push to `main`/`master`, Docker image is built and pushed to GHCR
+- Watchtower on the server auto-updates within 60 seconds
+- See `.github/workflows/deploy.yml`
+
+### Bot Integration
+
+The bot automatically sets up the Mini App menu button:
+- Menu button appears in Telegram chat
+- `/webapp` command opens the Mini App
+- "📱 Open App" button in main menu
+
+---
+
+*Last updated: April 2026*
+*Architecture: 5-phase refactor complete (including Mini App)*

@@ -50,8 +50,15 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Ensure we build for the platform we're deploying to
+          platforms: linux/amd64
 
       - name: Deployment Summary
         run: |
           echo "✅ Image built and pushed to ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
           echo "🔄 Watchtower on the server will automatically pull and restart the container within 60 seconds"
+          echo ""
+          echo "📱 Mini App is included in the build:"
+          echo "   - WebApp built from webapp/ directory"
+          echo "   - Static files served from public/webapp/"
+          echo "   - Access via /webapp route on your domain"

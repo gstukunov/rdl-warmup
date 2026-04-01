@@ -3,6 +3,12 @@
 /node_modules
 /build
 
+/webapp/node_modules
+
+# WebApp build output (generated during build)
+/public/webapp/*
+!/public/webapp/.gitkeep
+
 # Logs
 logs
 *.log

@@ -15,6 +15,7 @@ export default () => ({
   },
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN,
+    botUsername: process.env.TELEGRAM_BOT_USERNAME,
     webAppUrl: process.env.TELEGRAM_WEBAPP_URL,
   },
 });

@@ -9,11 +9,15 @@ COPY package*.json ./
 # Install dependencies
 RUN npm ci
 
-# Copy source code
+# Copy source code (including webapp)
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build webapp and server
+# Note: webapp:build installs its own dependencies and builds
+RUN npm run webapp:build
+
+# Build the NestJS server
+RUN npm run build:server
 
 # Production stage
 FROM node:20-alpine AS production
@@ -35,6 +39,9 @@ RUN npm ci
 
 # Copy built application from builder
 COPY --from=builder /usr/src/app/dist ./dist
+
+# Copy built webapp static files
+COPY --from=builder /usr/src/app/public/webapp ./public/webapp
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/

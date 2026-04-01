@@ -24,6 +24,23 @@ fi
 # Load environment variables
 export $(cat .env | grep -v '^#' | xargs)
 
+# Validate required environment variables
+required_vars=(
+    "TELEGRAM_BOT_TOKEN"
+    "TELEGRAM_BOT_USERNAME"
+    "TELEGRAM_WEBAPP_URL"
+    "DB_PASSWORD"
+    "REDIS_PASSWORD"
+    "GAME_PASSWORD"
+)
+
+for var in "${required_vars[@]}"; do
+    if [ -z "${!var}" ]; then
+        echo -e "${RED}❌ Required environment variable $var is not set!${NC}"
+        exit 1
+    fi
+done
+
 # Pull latest changes
 echo -e "${YELLOW}📥 Pulling latest changes...${NC}"
 git pull origin $(git rev-parse --abbrev-ref HEAD)
@@ -49,12 +66,14 @@ if docker-compose -f docker-compose.prod.yml ps | grep -q "Up"; then
     echo -e "${GREEN}✅ Deployment successful!${NC}"
     echo -e "${BLUE}🔄 Watchtower will handle automatic updates every 60 seconds${NC}"
     echo -e "${GREEN}📱 App is running at: http://$(hostname -I | awk '{print $1}'):3000${NC}"
+    echo -e "${GREEN}🌐 Mini App URL: ${TELEGRAM_WEBAPP_URL}${NC}"
     echo -e "${GREEN}🤖 Telegram bot is active${NC}"
     echo ""
     echo -e "${BLUE}📋 Useful commands:${NC}"
     echo -e "  ${YELLOW}View app logs:${NC} docker-compose -f docker-compose.prod.yml logs -f app"
     echo -e "  ${YELLOW}View watchtower logs:${NC} docker-compose -f docker-compose.prod.yml logs -f watchtower"
     echo -e "  ${YELLOW}Check status:${NC} docker-compose -f docker-compose.prod.yml ps"
+    echo -e "  ${YELLOW}Restart app:${NC} docker-compose -f docker-compose.prod.yml restart app"
 else
     echo -e "${RED}❌ Deployment failed!${NC}"
     echo -e "${RED}Check logs with: docker-compose -f docker-compose.prod.yml logs${NC}"
@@ -66,3 +85,11 @@ echo -e "${YELLOW}🧹 Cleaning up old Docker images...${NC}"
 docker image prune -f
 
 echo -e "${GREEN}🎉 Deployment complete!${NC}"
+echo ""
+echo -e "${BLUE}📱 To configure Mini App in BotFather:${NC}"
+echo -e "  1. Open @BotFather"
+echo -e "  2. Send: /mybots"
+echo -e "  3. Select your bot"
+echo -e "  4. Bot Settings → Menu Button → Configure menu button"
+echo -e "  5. Button text: Open App"
+echo -e "  6. URL: ${TELEGRAM_WEBAPP_URL}"

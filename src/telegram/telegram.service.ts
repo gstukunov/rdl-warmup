@@ -69,6 +69,7 @@ export class TelegramService implements OnModuleInit {
 
     this.bot = new Telegraf(botToken);
     this.registerHandlers();
+    this.setupMenuButton();
     this.bot.launch();
 
     this.logger.log('Telegram bot started');
@@ -76,6 +77,30 @@ export class TelegramService implements OnModuleInit {
     // Enable graceful stop
     process.once('SIGINT', () => this.bot.stop('SIGINT'));
     process.once('SIGTERM', () => this.bot.stop('SIGTERM'));
+  }
+
+  private setupMenuButton() {
+    const webAppUrl = this.configService.get<string>('telegram.webAppUrl');
+    
+    if (!webAppUrl) {
+      this.logger.warn('WebApp URL not configured, menu button will not be set');
+      return;
+    }
+
+    try {
+      // Set menu button for all users
+      this.bot.telegram.setChatMenuButton({
+        menuButton: {
+          type: 'web_app',
+          text: '🎮 Open App',
+          web_app: { url: webAppUrl },
+        },
+      });
+      
+      this.logger.log(`Menu button set with WebApp URL: ${webAppUrl}`);
+    } catch (error) {
+      this.logger.error('Failed to set menu button:', error);
+    }
   }
 
   // Create main menu keyboard
@@ -91,7 +116,10 @@ export class TelegramService implements OnModuleInit {
       ]).resize();
     }
 
-    return Markup.keyboard([['🎮 Игры', '📊 Профиль'], ['❓ Помощь']]).resize();
+    return Markup.keyboard([
+      ['🎮 Игры', '📊 Профиль'],
+      ['📱 Открыть приложение', '❓ Помощь'],
+    ]).resize();
   }
 
   // Create games submenu keyboard
@@ -215,6 +243,10 @@ export class TelegramService implements OnModuleInit {
     // Handle menu button clicks
     this.bot.hears('🚀 Старт', async (ctx) => {
       await this.handleStart(ctx);
+    });
+
+    this.bot.hears('📱 Открыть приложение', async (ctx) => {
+      await this.handleOpenWebApp(ctx);
     });
 
     this.bot.hears('📊 Профиль', async (ctx) => {
@@ -371,6 +403,10 @@ export class TelegramService implements OnModuleInit {
 
     this.bot.command('feedback', async (ctx) => {
       await this.handleFeedbackMenu(ctx);
+    });
+
+    this.bot.command('webapp', async (ctx) => {
+      await this.handleOpenWebApp(ctx);
     });
 
     this.bot.command('rate', async (ctx) => {
@@ -623,8 +659,37 @@ export class TelegramService implements OnModuleInit {
         `/endgame (или "завершить") — Завершить игру\n\n` +
         `⭐ После игры (только для игроков):\n` +
         `/feedback (или "оценить судей") — Оценить судей (оценка 1-7)\n\n` +
-        `💡 Можно использовать как кнопки меню, так и текстовые команды!`,
+        `💡 Можно использовать как кнопки меню, так и текстовые команды!\n\n` +
+        `📱 Также доступно приложение: /webapp`,
       await this.getMainMenuKeyboard(ctx.from!.id),
+    );
+  }
+
+  private async handleOpenWebApp(ctx: Context) {
+    const webAppUrl = this.configService.get<string>('telegram.webAppUrl');
+    
+    if (!webAppUrl) {
+      await ctx.reply(
+        'Приложение временно недоступно.',
+        await this.getMainMenuKeyboard(ctx.from!.id),
+      );
+      return;
+    }
+
+    await ctx.reply(
+      '📱 Откройте приложение для удобного управления играми:',
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: '🎮 Открыть RDL Warmup',
+                web_app: { url: webAppUrl },
+              },
+            ],
+          ],
+        },
+      },
     );
   }
 

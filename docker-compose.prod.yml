@@ -65,11 +65,15 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+      # Telegram Configuration
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME}
       TELEGRAM_WEBAPP_URL: ${TELEGRAM_WEBAPP_URL}
+      # Redis Configuration
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      # Game Configuration
       GAME_PASSWORD: ${GAME_PASSWORD}
     ports:
       - '3000:3000'
@@ -83,6 +87,27 @@ services:
     restart: always
     labels:
       - 'com.centurylinklabs.watchtower.enable=true'
+    # Serve static files from public/webapp (already included in image)
+    volumes:
+      - app_logs:/usr/src/app/logs
+
+  # Optional: Nginx reverse proxy for SSL termination and static file serving
+  # Uncomment if you want to use Nginx in front of the app
+  nginx:
+    image: nginx:alpine
+    container_name: bot_nginx
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro # SSL сертификаты
+      - /var/www/certbot:/var/www/certbot:ro # Для обновления сертификатов
+    depends_on:
+      - app
+    networks:
+      - telegram_network
+    restart: always
 
   watchtower:
     image: containrrr/watchtower:latest
@@ -104,6 +129,7 @@ services:
 volumes:
   postgres_data_prod:
   redis_data_prod:
+  app_logs:
 
 networks:
   telegram_network:

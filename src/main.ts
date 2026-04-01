@@ -3,10 +3,20 @@ import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { setupSwagger } from './config/swagger.config';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
+
+  // Serve static files for webapp
+  app.useStaticAssets(join(__dirname, '..', 'public', 'webapp'), {
+    prefix: '/webapp/',
+  });
+  
+  // Serve index.html for all non-API routes (SPA fallback)
+  // This should be added after routes are registered, so we use a wildcard handler
 
   // Global validation pipe
   app.useGlobalPipes(
@@ -40,5 +50,6 @@ async function bootstrap() {
   );
   Logger.log(`🌍 Environment: ${configService.get('nodeEnv')}`, 'Bootstrap');
   Logger.log(`🤖 Telegram bot will start separately...`, 'Bootstrap');
+  Logger.log(`📱 WebApp available at: ${webAppUrl}`, 'Bootstrap');
 }
 bootstrap();
