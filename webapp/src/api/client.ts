@@ -21,8 +21,12 @@ class ApiClient {
       (config) => {
         // Get initData from Telegram WebApp
         const initDataRaw = this.getInitData();
+        console.log('[API Client] initData:', initDataRaw ? 'PRESENT' : 'EMPTY');
+        
         if (initDataRaw) {
           config.headers['X-Telegram-Init-Data'] = initDataRaw;
+        } else {
+          console.warn('[API Client] No initData available!');
         }
         return config;
       },
@@ -40,22 +44,50 @@ class ApiClient {
   }
 
   private getInitData(): string {
-    // In development, use mock init data
+    // Try multiple methods to get initData
+    
+    // Method 1: From URL params (for testing)
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tgWebAppData = urlParams.get('tgWebAppData');
+      if (tgWebAppData) {
+        console.log('[API Client] Got initData from URL');
+        return tgWebAppData;
+      }
+    }
+    
+    // Method 2: From Telegram SDK
+    try {
+      const raw = initData.raw();
+      if (raw) {
+        console.log('[API Client] Got initData from SDK');
+        return raw;
+      }
+    } catch (e) {
+      console.warn('[API Client] SDK initData failed:', e);
+    }
+    
+    // Method 3: From window.Telegram.WebApp (fallback)
+    try {
+      const tg = (window as any).Telegram?.WebApp;
+      if (tg?.initData) {
+        console.log('[API Client] Got initData from window.Telegram');
+        return tg.initData;
+      }
+    } catch (e) {
+      console.warn('[API Client] Window Telegram failed:', e);
+    }
+    
+    // DEV fallback
     if (import.meta.env.DEV) {
+      console.log('[API Client] Using DEV mock data');
       return this.getMockInitData();
     }
-
-    // In production, get from Telegram SDK
-    try {
-      return initData.raw() || '';
-    } catch {
-      return '';
-    }
+    
+    return '';
   }
 
   private getMockInitData(): string {
-    // Mock initData for development
-    // Format: user={...}&auth_date=...&hash=...
     const mockUser = {
       id: 123456789,
       first_name: 'Test',
