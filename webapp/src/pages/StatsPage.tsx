@@ -83,6 +83,7 @@ export const StatsPage: React.FC = () => {
                     <td className="rank">{index + 1}</td>
                     <td className="name">
                       {speaker.firstName}
+                      &nbsp;
                       {speaker.lastName}
                       {speaker.username && (
                         <span className="username">@{speaker.username}</span>
@@ -113,6 +114,7 @@ export const StatsPage: React.FC = () => {
                     <td className="rank">{index + 1}</td>
                     <td className="name">
                       {judge.firstName}
+                      &nbsp;
                       {judge.lastName}
                       {judge.username && (
                         <span className="username">@{judge.username}</span>
