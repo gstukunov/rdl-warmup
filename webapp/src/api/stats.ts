@@ -4,6 +4,7 @@ export interface SpeakerStat {
   telegramId: number;
   username: string | null;
   firstName: string;
+  lastName: string;
   gamesPlayed: number;
   averageScore: number;
 }
@@ -12,6 +13,7 @@ export interface JudgeStat {
   telegramId: number;
   username: string | null;
   firstName: string;
+  lastName: string;
   gamesJudged: number;
   averageScore: number;
 }

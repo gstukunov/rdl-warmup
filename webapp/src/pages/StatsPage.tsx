@@ -30,7 +30,7 @@ export const StatsPage: React.FC = () => {
   if (loading) {
     return (
       <div className="stats-page">
-        <div className="loading">Loading statistics...</div>
+        <div className="loading">Грузим статистику...</div>
       </div>
     );
   }
@@ -46,7 +46,7 @@ export const StatsPage: React.FC = () => {
   return (
     <div className="stats-page">
       <header className="stats-header">
-        <h1>RDL Warmup Statistics</h1>
+        <h1>RDL статистика тренировочных</h1>
       </header>
 
       <div className="tabs">
@@ -54,27 +54,27 @@ export const StatsPage: React.FC = () => {
           className={`tab ${activeTab === 'speakers' ? 'active' : ''}`}
           onClick={() => setActiveTab('speakers')}
         >
-          Speakers ({speakers.length})
+          Спикеры ({speakers.length})
         </button>
         <button
           className={`tab ${activeTab === 'judges' ? 'active' : ''}`}
           onClick={() => setActiveTab('judges')}
         >
-          Judges ({judges.length})
+          Судьи ({judges.length})
         </button>
       </div>
 
       <div className="stats-content">
         {activeTab === 'speakers' ? (
           <div className="table-container">
-            <h2>Speaker Rankings</h2>
+            <h2>Тэб Спикеров</h2>
             <table className="stats-table">
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Name</th>
-                  <th>Games</th>
-                  <th>Avg Score</th>
+                  <th>Имя</th>
+                  <th>Игры</th>
+                  <th>Средний Спик</th>
                 </tr>
               </thead>
               <tbody>
@@ -83,6 +83,7 @@ export const StatsPage: React.FC = () => {
                     <td className="rank">{index + 1}</td>
                     <td className="name">
                       {speaker.firstName}
+                      {speaker.lastName}
                       {speaker.username && (
                         <span className="username">@{speaker.username}</span>
                       )}
@@ -112,6 +113,7 @@ export const StatsPage: React.FC = () => {
                     <td className="rank">{index + 1}</td>
                     <td className="name">
                       {judge.firstName}
+                      {judge.lastName}
                       {judge.username && (
                         <span className="username">@{judge.username}</span>
                       )}

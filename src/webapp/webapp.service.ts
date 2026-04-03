@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Game, GameStatus } from '../game/entities/game.entity';
-import { GameParticipant, ParticipantRole } from '../game/entities/game-participant.entity';
+import {
+  GameParticipant,
+  ParticipantRole,
+} from '../game/entities/game-participant.entity';
 import { RoomPosition } from '../game/entities/room-participant.entity';
 import { User } from '../user/entities/user.entity';
 import { SpeakerScore } from '../game/entities/speaker-score.entity';
@@ -25,6 +32,7 @@ interface SpeakerStat {
   telegramId: number;
   username: string | null;
   firstName: string;
+  lastName: string;
   gamesPlayed: number;
   averageScore: number;
 }
@@ -33,6 +41,7 @@ interface JudgeStat {
   telegramId: number;
   username: string | null;
   firstName: string;
+  lastName: string;
   gamesJudged: number;
   averageScore: number;
 }
@@ -68,7 +77,9 @@ export class WebAppService {
     return {
       botUsername: this.configService.get<string>('telegram.botUsername') || '',
       apiBaseUrl: this.configService.get<string>('telegram.webAppUrl') || '',
-      environment: this.configService.get<'development' | 'production'>('nodeEnv') || 'development',
+      environment:
+        this.configService.get<'development' | 'production'>('nodeEnv') ||
+        'development',
     };
   }
 
@@ -86,11 +97,12 @@ export class WebAppService {
 
     // Get user details for speakers using In operator
     const speakerTelegramIds = speakerScores.map((s) => String(s.telegramId));
-    const speakerUsers = speakerTelegramIds.length > 0 
-      ? await this.userRepository.find({
-          where: { telegramId: In(speakerTelegramIds) },
-        })
-      : [];
+    const speakerUsers =
+      speakerTelegramIds.length > 0
+        ? await this.userRepository.find({
+            where: { telegramId: In(speakerTelegramIds) },
+          })
+        : [];
 
     // Create a map for quick lookup
     const userMap = new Map(speakerUsers.map((u) => [String(u.telegramId), u]));
@@ -100,9 +112,12 @@ export class WebAppService {
       return {
         telegramId: Number(score.telegramId),
         username: user?.username ?? null,
-        firstName: user?.firstName ?? 'Unknown',
+        firstName: user?.firstName ?? '',
+        lastName: user?.lastName ?? '',
         gamesPlayed: parseInt(score.gamesPlayed, 10),
-        averageScore: score.averageScore ? parseFloat(parseFloat(score.averageScore).toFixed(1)) : 0,
+        averageScore: score.averageScore
+          ? parseFloat(parseFloat(score.averageScore).toFixed(1))
+          : 0,
       };
     });
 
@@ -119,21 +134,25 @@ export class WebAppService {
 
     // Get user details for judges
     const judgeTelegramIds = judgeFeedbacks.map((j) => String(j.telegramId));
-    const judgeUsers = judgeTelegramIds.length > 0
-      ? await this.userRepository.find({
-          where: { telegramId: In(judgeTelegramIds) },
-        })
-      : [];
+    const judgeUsers =
+      judgeTelegramIds.length > 0
+        ? await this.userRepository.find({
+            where: { telegramId: In(judgeTelegramIds) },
+          })
+        : [];
 
     // Create a map for quick lookup
-    const judgeUserMap = new Map(judgeUsers.map((u) => [String(u.telegramId), u]));
+    const judgeUserMap = new Map(
+      judgeUsers.map((u) => [String(u.telegramId), u]),
+    );
 
     const judges: JudgeStat[] = judgeFeedbacks.map((feedback) => {
       const user = judgeUserMap.get(String(feedback.telegramId));
       return {
         telegramId: Number(feedback.telegramId),
         username: user?.username ?? null,
-        firstName: user?.firstName ?? 'Unknown',
+        firstName: user?.firstName ?? '',
+        lastName: user?.firstName ?? '',
         gamesJudged: parseInt(feedback.gamesJudged, 10),
         averageScore: feedback.averageScore
           ? parseFloat(parseFloat(feedback.averageScore).toFixed(1))
@@ -161,14 +180,17 @@ export class WebAppService {
       status: game.status,
       maxParticipants: game.maxParticipants,
       participantCount: game.participants?.length || 0,
-      isUserRegistered: game.participants?.some(
-        (p) => Number(p.telegramId) === telegramId,
-      ) || false,
+      isUserRegistered:
+        game.participants?.some((p) => Number(p.telegramId) === telegramId) ||
+        false,
       createdAt: game.createdAt.toISOString(),
     }));
   }
 
-  async getGameById(gameId: string, telegramId: number): Promise<GameDetailsDto> {
+  async getGameById(
+    gameId: string,
+    telegramId: number,
+  ): Promise<GameDetailsDto> {
     const game = await this.gameRepository.findOne({
       where: { id: gameId },
       relations: ['participants'],
@@ -255,7 +277,9 @@ export class WebAppService {
       .getRawOne();
 
     return {
-      averageScore: result?.average ? parseFloat(parseFloat(result.average).toFixed(1)) : 0,
+      averageScore: result?.average
+        ? parseFloat(parseFloat(result.average).toFixed(1))
+        : 0,
       totalFeedbacks: result?.count ? parseInt(result.count, 10) : 0,
     };
   }
@@ -327,7 +351,9 @@ export class WebAppService {
     }
 
     if (game.status !== GameStatus.REGISTRATION) {
-      throw new ForbiddenException('Cannot leave game after registration is closed');
+      throw new ForbiddenException(
+        'Cannot leave game after registration is closed',
+      );
     }
 
     const participant = await this.participantRepository.findOne({
@@ -455,7 +481,8 @@ export class WebAppService {
       maxParticipants: game.maxParticipants,
       participantCount: game.participants?.length || 0,
       isUserRegistered:
-        game.participants?.some((p) => Number(p.telegramId) === telegramId) || false,
+        game.participants?.some((p) => Number(p.telegramId) === telegramId) ||
+        false,
       motion: game.motion,
       startTime: game.startTime?.toISOString() || null,
       endTime: game.endTime?.toISOString() || null,
