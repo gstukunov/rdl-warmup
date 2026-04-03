@@ -74,7 +74,7 @@ export const StatsPage: React.FC = () => {
                   <th>#</th>
                   <th>Имя</th>
                   <th>Игры</th>
-                  <th>Средний Спик</th>
+                  <th>Ср. спик</th>
                 </tr>
               </thead>
               <tbody>
@@ -103,9 +103,9 @@ export const StatsPage: React.FC = () => {
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Name</th>
-                  <th>Games</th>
-                  <th>Avg Rating</th>
+                  <th>Имя</th>
+                  <th>Игры</th>
+                  <th>Ср. спик</th>
                 </tr>
               </thead>
               <tbody>
