@@ -58,6 +58,19 @@ const defaultTheme: TelegramTheme = {
   secondaryBgColor: '#f5f5f5',
 };
 
+// Check if running inside Telegram
+const isTelegramEnv = (): boolean => {
+  try {
+    const tg = (window as any).Telegram;
+    return !!(
+      tg?.WebApp ||
+      /WebView|Telegram/i.test(navigator.userAgent)
+    );
+  } catch {
+    return false;
+  }
+};
+
 export function useTelegram(): UseTelegramReturn {
   const [isReady, setIsReady] = useState(false);
   const [user, setUser] = useState<TelegramUser | null>(null);
@@ -66,27 +79,58 @@ export function useTelegram(): UseTelegramReturn {
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
+    console.log('[useTelegram] Initializing...');
+    
+    // Always set ready state even if Telegram SDK fails
+    const markReady = () => {
+      console.log('[useTelegram] Marking as ready');
+      setIsReady(true);
+    };
+
     try {
-      // Initialize Telegram SDK
-      init();
-      
-      // Mount components
-      miniApp.mount();
-      viewport.mount();
-      themeParams.mount();
-      
-      // Expand to full height
-      try {
-        if (viewport.expand.isAvailable()) {
-          viewport.expand();
-          setIsExpanded(true);
+      // Check if in Telegram environment
+      if (!isTelegramEnv()) {
+        console.log('[useTelegram] Not in Telegram environment, using defaults');
+        
+        // DEV fallback
+        if (import.meta.env.DEV) {
+          setUser({
+            id: 123456789,
+            first_name: 'Test',
+            last_name: 'User',
+            username: 'testuser',
+            language_code: 'en',
+          });
         }
-      } catch {
-        // Ignore
+        
+        markReady();
+        return;
       }
 
-      // Set ready
-      miniApp.ready();
+      // Initialize Telegram SDK
+      try {
+        init();
+        miniApp.mount();
+        viewport.mount();
+        themeParams.mount();
+        
+        // Expand to full height
+        try {
+          if (viewport.expand.isAvailable()) {
+            viewport.expand();
+            setIsExpanded(true);
+          }
+        } catch {
+          // Ignore
+        }
+
+        // Set ready
+        miniApp.ready();
+      } catch (sdkError) {
+        console.warn('[useTelegram] SDK initialization error:', sdkError);
+        markReady();
+        return;
+      }
 
       // Get user and initData
       try {
@@ -103,17 +147,6 @@ export function useTelegram(): UseTelegramReturn {
         }
       } catch (e) {
         console.warn('[useTelegram] Failed to get initData:', e);
-        
-        // DEV fallback
-        if (import.meta.env.DEV) {
-          setUser({
-            id: 123456789,
-            first_name: 'Test',
-            last_name: 'User',
-            username: 'testuser',
-            language_code: 'en',
-          });
-        }
       }
 
       // Get theme
@@ -143,26 +176,18 @@ export function useTelegram(): UseTelegramReturn {
         return () => window.removeEventListener('resize', handleResize);
       }
 
-      setIsReady(true);
+      markReady();
 
       return () => {
-        viewport.unmount();
-        themeParams.unmount();
-        miniApp.unmount();
+        try {
+          viewport.unmount();
+          themeParams.unmount();
+          miniApp.unmount();
+        } catch {}
       };
     } catch (error) {
-      console.warn('[useTelegram] SDK not available:', error);
-      
-      if (import.meta.env.DEV) {
-        setUser({
-          id: 123456789,
-          first_name: 'Test',
-          last_name: 'User',
-          username: 'testuser',
-          language_code: 'en',
-        });
-        setIsReady(true);
-      }
+      console.warn('[useTelegram] Fatal error:', error);
+      markReady();
     }
   }, []);
 

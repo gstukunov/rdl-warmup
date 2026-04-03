@@ -37,10 +37,76 @@
         -webkit-user-select: text;
         user-select: text;
       }
+
+      /* Loading indicator */
+      #initial-loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: var(--tg-theme-bg-color, #ffffff);
+        z-index: 9999;
+      }
+
+      #initial-loading.hidden {
+        display: none;
+      }
+
+      .loading-spinner {
+        padding: 20px;
+        text-align: center;
+      }
+
+      /* No script message */
+      noscript {
+        display: block;
+        padding: 20px;
+        text-align: center;
+        color: #e74c3c;
+      }
     </style>
   </head>
   <body>
+    <noscript>
+      <h1>JavaScript Required</h1>
+      <p>This application requires JavaScript to run. Please enable JavaScript in your browser.</p>
+    </noscript>
+    
+    <div id="initial-loading">
+      <div class="loading-spinner">
+        <div>Загрузка...</div>
+        <div style="font-size: 12px; color: #666; margin-top: 10px;">RDL Warmup</div>
+      </div>
+    </div>
+    
     <div id="root"></div>
+    
+    <script>
+      // Hide loading indicator when app starts
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var loader = document.getElementById('initial-loading');
+          if (loader) {
+            loader.classList.add('hidden');
+          }
+        }, 500);
+      });
+      
+      // Error handling
+      window.onerror = function(msg, url, line) {
+        console.error('[PAGE ERROR]', msg, 'at', url, line);
+        var loader = document.getElementById('initial-loading');
+        if (loader) {
+          loader.innerHTML = '<div style="padding: 20px; color: #e74c3c;">Error loading app. Check console.</div>';
+        }
+        return false;
+      };
+    </script>
+    
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
