@@ -1,48 +1,92 @@
 import React, { useState, useEffect } from 'react';
+import { StatsPage } from './pages/StatsPage';
 import { LoginPage } from './pages/LoginPage';
 import { GameResultsPage } from './pages/GameResultsPage';
 import { adminApi } from './api/admin';
+import { Button } from './components/Button';
+import './App.css';
+
+type View = 'stats' | 'admin-login' | 'admin-results';
 
 const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentView, setCurrentView] = useState<View>('stats');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // Check if user is already authenticated
+    // Check if user is already authenticated as admin
     const token = adminApi.getToken();
-    setIsAuthenticated(!!token);
+    if (token) {
+      setIsAdmin(true);
+    }
     setChecking(false);
   }, []);
 
   const handleLogin = () => {
-    setIsAuthenticated(true);
+    setIsAdmin(true);
+    setCurrentView('admin-results');
   };
 
   const handleLogout = () => {
     adminApi.clearToken();
-    setIsAuthenticated(false);
+    setIsAdmin(false);
+    setCurrentView('stats');
+  };
+
+  const navigateToAdmin = () => {
+    if (isAdmin) {
+      setCurrentView('admin-results');
+    } else {
+      setCurrentView('admin-login');
+    }
+  };
+
+  const navigateToStats = () => {
+    setCurrentView('stats');
   };
 
   if (checking) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '100vh',
-        fontSize: '16px',
-        color: '#666'
-      }}>
-        Загрузка...
+      <div className="loading-screen">
+        <div className="loading">Загрузка...</div>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return <LoginPage onLogin={handleLogin} />;
+  // Show stats page (public)
+  if (currentView === 'stats') {
+    return (
+      <div>
+        <div className="admin-nav">
+          <Button onClick={navigateToAdmin} variant="secondary" size="sm">
+            {isAdmin ? 'Панель админа' : 'Вход для админа'}
+          </Button>
+        </div>
+        <StatsPage />
+      </div>
+    );
   }
 
-  return <GameResultsPage onLogout={handleLogout} />;
+  // Show admin login
+  if (currentView === 'admin-login') {
+    return (
+      <div>
+        <div className="admin-nav">
+          <Button onClick={navigateToStats} variant="secondary" size="sm">
+            ← К статистике
+          </Button>
+        </div>
+        <LoginPage onLogin={handleLogin} />
+      </div>
+    );
+  }
+
+  // Show admin results page
+  if (currentView === 'admin-results') {
+    return <GameResultsPage onLogout={handleLogout} />;
+  }
+
+  return null;
 };
 
 export default App;

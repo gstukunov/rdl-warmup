@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WebAppController } from './webapp.controller';
+import { AdminController } from './admin.controller';
 import { StatsController } from './stats.controller';
 import { WebAppService } from './webapp.service';
 import { Game } from '../game/entities/game.entity';
@@ -26,7 +27,7 @@ import { AdminAuthGuard } from './guards/admin-auth.guard';
       RoomJudge,
     ]),
   ],
-  controllers: [WebAppController, StatsController],
+  controllers: [WebAppController, AdminController, StatsController],
   providers: [WebAppService, AdminAuthGuard],
   exports: [AdminAuthGuard],
 })

@@ -458,7 +458,7 @@ npx tsc --noEmit
 - `GET /games-v2/:id` - Get game by ID
 - `POST /games-v2` - Create game
 
-**WebApp API** (Mini App):
+**WebApp API** (Mini App - requires Telegram auth):
 - `GET /webapp/config` - Get bot config
 - `GET /webapp/games` - List open games
 - `GET /webapp/games/:id` - Get game details
@@ -468,12 +468,15 @@ npx tsc --noEmit
 - `GET /webapp/profile` - Get user profile
 - `GET /webapp/profile/judge-stats` - Get judge stats
 
-**Admin API** (Mini App - requires password):
-- `POST /webapp/admin/login` - Login with admin password
-- `GET /webapp/admin/users` - Get all users (for speaker/judge selection)
-- `GET /webapp/admin/games/completed` - Get games ready for results
-- `GET /webapp/admin/games/:id/details` - Get game details for admin
-- `POST /webapp/admin/games/results` - Submit game results with scores
+**Stats API** (Public - no auth required):
+- `GET /stats` - Get public speaker and judge statistics
+
+**Admin API** (requires admin password):
+- `POST /admin/login` - Login with admin password
+- `GET /admin/users` - Get all users (for speaker/judge selection)
+- `GET /admin/games/completed` - Get games ready for results
+- `GET /admin/games/:id/details` - Get game details for admin
+- `POST /admin/games/results` - Submit game results with scores
 
 ---
 

@@ -11,7 +11,6 @@ import {
 } from '@nestjs/common';
 import { WebAppService } from './webapp.service';
 import { WebAppAuthGuard, type WebAppRequest } from './guards/webapp-auth.guard';
-import { AdminAuthGuard } from './guards/admin-auth.guard';
 import type {
   ApiResponse,
   WebAppConfigResponse,
@@ -21,10 +20,6 @@ import type {
   JudgeStatsDto,
   RoomAllocationDto,
   JoinGameRequestDto,
-  AdminLoginResponseDto,
-  UserOptionDto,
-  CompletedGameListItemDto,
-  SubmitGameResultsRequestDto,
 } from './dtos/webapp.dto';
 
 @Controller('api/webapp')
@@ -133,63 +128,6 @@ export class WebAppController {
     return {
       success: true,
       data: stats,
-    };
-  }
-
-  // Admin endpoints
-  @Post('admin/login')
-  @HttpCode(HttpStatus.OK)
-  async adminLogin(
-    @Body('password') password: string,
-  ): Promise<ApiResponse<AdminLoginResponseDto>> {
-    const token = await this.webAppService.adminLogin(password);
-    return {
-      success: true,
-      data: { token },
-    };
-  }
-
-  @Get('admin/users')
-  @UseGuards(AdminAuthGuard)
-  async getUsersForAdmin(): Promise<ApiResponse<UserOptionDto[]>> {
-    const users = await this.webAppService.getUsersForAdmin();
-    return {
-      success: true,
-      data: users,
-    };
-  }
-
-  @Get('admin/games/completed')
-  @UseGuards(AdminAuthGuard)
-  async getCompletedGamesForAdmin(): Promise<ApiResponse<CompletedGameListItemDto[]>> {
-    const games = await this.webAppService.getCompletedGamesForAdmin();
-    return {
-      success: true,
-      data: games,
-    };
-  }
-
-  @Get('admin/games/:id/details')
-  @UseGuards(AdminAuthGuard)
-  async getGameDetailsForAdmin(
-    @Param('id') id: string,
-  ): Promise<ApiResponse<GameDetailsDto>> {
-    const game = await this.webAppService.getGameDetailsForAdmin(id);
-    return {
-      success: true,
-      data: game,
-    };
-  }
-
-  @Post('admin/games/results')
-  @UseGuards(AdminAuthGuard)
-  @HttpCode(HttpStatus.OK)
-  async submitGameResults(
-    @Body() body: SubmitGameResultsRequestDto,
-  ): Promise<ApiResponse<void>> {
-    await this.webAppService.submitGameResults(body);
-    return {
-      success: true,
     };
   }
 }

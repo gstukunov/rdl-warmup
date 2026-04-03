@@ -286,38 +286,77 @@ GET /webapp/profile/judge-stats
 ```
 Returns judge rating statistics.
 
+### Stats Endpoint (Public)
+
+#### Get Public Stats
+```
+GET /stats
+```
+Returns public speaker and judge statistics. No authentication required.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "speakers": [
+      {
+        "telegramId": 123456789,
+        "username": "user",
+        "firstName": "John",
+        "gamesPlayed": 10,
+        "averageScore": 75.5
+      }
+    ],
+    "judges": [
+      {
+        "telegramId": 987654321,
+        "username": "judge",
+        "firstName": "Jane",
+        "gamesJudged": 5,
+        "averageScore": 4.2
+      }
+    ]
+  }
+}
+```
+
 ### Admin Endpoints
 
 These endpoints require admin password authentication via `Authorization: Bearer <token>` header.
 
 #### Admin Login
 ```
-POST /webapp/admin/login
+POST /admin/login
 Body: { "password": "admin_password" }
 ```
 Returns a token for subsequent admin requests.
 
 #### Get Users
 ```
-GET /webapp/admin/users
+GET /admin/users
+Authorization: Bearer <token>
 ```
 Returns list of all users for speaker/judge selection.
 
 #### Get Completed Games
 ```
-GET /webapp/admin/games/completed
+GET /admin/games/completed
+Authorization: Bearer <token>
 ```
 Returns games that are in progress or completed (ready for results submission).
 
 #### Get Game Details (Admin)
 ```
-GET /webapp/admin/games/:id/details
+GET /admin/games/:id/details
+Authorization: Bearer <token>
 ```
 Returns detailed game info for admin purposes.
 
 #### Submit Game Results
 ```
-POST /webapp/admin/games/results
+POST /admin/games/results
+Authorization: Bearer <token>
 Body: {
   "gameId": "uuid",
   "motion": "This house would...",
