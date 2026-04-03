@@ -19,6 +19,7 @@ import { JudgeFeedback } from '../game/entities/judge-feedback.entity';
 import { RoomAllocation } from '../game/entities/room-allocation.entity';
 import { RoomParticipant } from '../game/entities/room-participant.entity';
 import { RoomJudge } from '../game/entities/room-judge.entity';
+import { AdminTokenService } from './admin-token.service';
 import type {
   WebAppConfigResponse,
   GameListItemDto,
@@ -59,6 +60,7 @@ export interface PublicStats {
 export class WebAppService {
   constructor(
     private readonly configService: ConfigService,
+    private readonly tokenService: AdminTokenService,
     @InjectRepository(Game)
     private readonly gameRepository: Repository<Game>,
     @InjectRepository(GameParticipant)
@@ -465,18 +467,12 @@ export class WebAppService {
   // Admin methods
 
   async adminLogin(password: string): Promise<string> {
-    const adminPassword = this.configService.get<string>('admin.password');
-    
-    if (!adminPassword) {
-      throw new UnauthorizedException('Admin password not configured');
-    }
-
-    if (password !== adminPassword) {
+    if (!this.tokenService.validatePassword(password)) {
       throw new UnauthorizedException('Invalid admin password');
     }
 
-    // Return a simple token (in production, use JWT)
-    return 'admin_token_' + Date.now();
+    // Create and return a proper token
+    return this.tokenService.createToken();
   }
 
   async getUsersForAdmin(): Promise<UserOptionDto[]> {

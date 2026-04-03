@@ -4,6 +4,7 @@ import { WebAppController } from './webapp.controller';
 import { AdminController } from './admin.controller';
 import { StatsController } from './stats.controller';
 import { WebAppService } from './webapp.service';
+import { AdminTokenService } from './admin-token.service';
 import { Game } from '../game/entities/game.entity';
 import { GameParticipant } from '../game/entities/game-participant.entity';
 import { User } from '../user/entities/user.entity';
@@ -28,7 +29,7 @@ import { AdminAuthGuard } from './guards/admin-auth.guard';
     ]),
   ],
   controllers: [WebAppController, AdminController, StatsController],
-  providers: [WebAppService, AdminAuthGuard],
-  exports: [AdminAuthGuard],
+  providers: [WebAppService, AdminTokenService, AdminAuthGuard],
+  exports: [AdminTokenService, AdminAuthGuard],
 })
 export class WebAppModule {}

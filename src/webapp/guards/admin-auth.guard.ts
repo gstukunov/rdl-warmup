@@ -4,7 +4,7 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { AdminTokenService } from '../admin-token.service';
 
 export interface AdminRequest {
   isAdmin: boolean;
@@ -12,7 +12,7 @@ export interface AdminRequest {
 
 @Injectable()
 export class AdminAuthGuard implements CanActivate {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly tokenService: AdminTokenService) {}
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
@@ -22,21 +22,17 @@ export class AdminAuthGuard implements CanActivate {
       throw new UnauthorizedException('Missing authorization header');
     }
 
-    // Extract password from Bearer token
+    // Extract token from Bearer token
     const parts = authHeader.split(' ');
     if (parts.length !== 2 || parts[0] !== 'Bearer') {
       throw new UnauthorizedException('Invalid authorization format');
     }
 
-    const providedPassword = parts[1];
-    const adminPassword = this.configService.get<string>('admin.password');
+    const token = parts[1];
 
-    if (!adminPassword) {
-      throw new UnauthorizedException('Admin password not configured');
-    }
-
-    if (providedPassword !== adminPassword) {
-      throw new UnauthorizedException('Invalid admin password');
+    // Validate token
+    if (!this.tokenService.validateToken(token)) {
+      throw new UnauthorizedException('Invalid or expired token');
     }
 
     // Mark request as admin
