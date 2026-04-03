@@ -468,6 +468,13 @@ npx tsc --noEmit
 - `GET /webapp/profile` - Get user profile
 - `GET /webapp/profile/judge-stats` - Get judge stats
 
+**Admin API** (Mini App - requires password):
+- `POST /webapp/admin/login` - Login with admin password
+- `GET /webapp/admin/users` - Get all users (for speaker/judge selection)
+- `GET /webapp/admin/games/completed` - Get games ready for results
+- `GET /webapp/admin/games/:id/details` - Get game details for admin
+- `POST /webapp/admin/games/results` - Submit game results with scores
+
 ---
 
 ## Technology Stack
@@ -518,6 +525,9 @@ WEBAPP_DEV_URL=http://localhost:5173
 
 # Game
 GAME_PASSWORD=secret_password_for_creating_games
+
+# Admin
+ADMIN_PASSWORD=your_secure_admin_password_for_results
 ```
 
 ---

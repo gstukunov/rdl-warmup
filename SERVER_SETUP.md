@@ -89,6 +89,9 @@ TELEGRAM_WEBAPP_URL=https://your-domain.com/webapp
 # Game password (for creating games)
 GAME_PASSWORD=your_game_password
 
+# Admin password (for submitting game results)
+ADMIN_PASSWORD=your_secure_admin_password
+
 # Docker image (for CI/CD)
 IMAGE_NAME=ghcr.io/your-username/your-repo
 ```
@@ -332,6 +335,7 @@ chmod +x deploy.sh
 | `TELEGRAM_BOT_USERNAME` | Bot username without @ | Yes |
 | `TELEGRAM_WEBAPP_URL` | Public Mini App URL | Yes |
 | `GAME_PASSWORD` | Password for creating games | Yes |
+| `ADMIN_PASSWORD` | Password for admin results page | No |
 | `IMAGE_NAME` | Docker image name | For CI/CD |
 
 ## Support

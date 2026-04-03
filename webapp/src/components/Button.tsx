@@ -3,7 +3,8 @@ import { useTelegram } from '../hooks/useTelegram';
 
 interface ButtonProps {
   children: React.ReactNode;
-  onClick: () => void;
+  onClick?: () => void;
+  type?: 'button' | 'submit' | 'reset';
   variant?: 'primary' | 'secondary' | 'danger';
   disabled?: boolean;
   loading?: boolean;
@@ -15,6 +16,7 @@ interface ButtonProps {
 export const Button: React.FC<ButtonProps> = ({
   children,
   onClick,
+  type = 'button',
   variant = 'primary',
   disabled = false,
   loading = false,
@@ -25,7 +27,7 @@ export const Button: React.FC<ButtonProps> = ({
   const { theme, impactOccurred } = useTelegram();
 
   const handleClick = () => {
-    if (!disabled && !loading) {
+    if (!disabled && !loading && onClick) {
       impactOccurred('medium');
       onClick();
     }
@@ -92,7 +94,7 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   return (
-    <button style={style} onClick={handleClick} disabled={disabled || loading}>
+    <button type={type} style={style} onClick={handleClick} disabled={disabled || loading}>
       {loading && <span>⏳</span>}
       {children}
     </button>

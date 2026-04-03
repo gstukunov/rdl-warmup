@@ -98,14 +98,14 @@ export const StatsPage: React.FC = () => {
           </div>
         ) : (
           <div className="table-container">
-            <h2>Judge Rankings</h2>
+            <h2>Статистика оценок судейства</h2>
             <table className="stats-table">
               <thead>
                 <tr>
                   <th>#</th>
                   <th>Имя</th>
-                  <th>Игры</th>
-                  <th>Ср. спик</th>
+                  <th>Оценок</th>
+                  <th>Ср. оценка</th>
                 </tr>
               </thead>
               <tbody>

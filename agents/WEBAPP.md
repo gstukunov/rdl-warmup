@@ -168,6 +168,8 @@ Status indicator with appropriate colors:
 | GamesList | `/` | Shows open games and user's active game |
 | GameDetails | `/games/:id` | Game details, join/leave, participants |
 | Profile | `/profile` | User stats and judge ratings |
+| LoginPage | `/admin` | Admin login with password |
+| GameResultsPage | `/admin/results` | Submit game results with scores |
 
 ### State Management
 
@@ -283,6 +285,66 @@ Returns user profile with stats.
 GET /webapp/profile/judge-stats
 ```
 Returns judge rating statistics.
+
+### Admin Endpoints
+
+These endpoints require admin password authentication via `Authorization: Bearer <token>` header.
+
+#### Admin Login
+```
+POST /webapp/admin/login
+Body: { "password": "admin_password" }
+```
+Returns a token for subsequent admin requests.
+
+#### Get Users
+```
+GET /webapp/admin/users
+```
+Returns list of all users for speaker/judge selection.
+
+#### Get Completed Games
+```
+GET /webapp/admin/games/completed
+```
+Returns games that are in progress or completed (ready for results submission).
+
+#### Get Game Details (Admin)
+```
+GET /webapp/admin/games/:id/details
+```
+Returns detailed game info for admin purposes.
+
+#### Submit Game Results
+```
+POST /webapp/admin/games/results
+Body: {
+  "gameId": "uuid",
+  "motion": "This house would...",
+  "openingGovernment": {
+    "telegramId": 123456789,
+    "isIronman": false,
+    "score": 75
+  },
+  "openingOpposition": {
+    "telegramId": 987654321,
+    "isIronman": false,
+    "score": 72
+  },
+  "closingGovernment": {
+    "telegramId": 111222333,
+    "isIronman": false,
+    "score": 70
+  },
+  "closingOpposition": {
+    "telegramId": 444555666,
+    "isIronman": false,
+    "score": 68
+  },
+  "judgeTelegramId": 777888999
+}
+```
+Submits speaker scores for all positions and marks game as completed.
 
 ---
 
@@ -422,6 +484,7 @@ Ensure these are set in production:
 TELEGRAM_BOT_USERNAME=your_bot_username
 TELEGRAM_WEBAPP_URL=https://your-domain.com/webapp
 NODE_ENV=production
+ADMIN_PASSWORD=your_secure_admin_password
 ```
 
 ### BotFather Configuration

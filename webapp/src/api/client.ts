@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios';
 import type { ApiResponse } from '../types';
 
 class ApiClient {
@@ -119,24 +119,24 @@ class ApiClient {
     return params.toString();
   }
 
-  async get<T>(url: string): Promise<T> {
-    const response = await this.client.get<ApiResponse<T>>(url);
+  async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.get<ApiResponse<T>>(url, config);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Request failed');
     }
     return response.data.data as T;
   }
 
-  async post<T>(url: string, data?: unknown): Promise<T> {
-    const response = await this.client.post<ApiResponse<T>>(url, data);
+  async post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.post<ApiResponse<T>>(url, data, config);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Request failed');
     }
     return response.data.data as T;
   }
 
-  async patch<T>(url: string, data?: unknown): Promise<T> {
-    const response = await this.client.patch<ApiResponse<T>>(url, data);
+  async patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.patch<ApiResponse<T>>(url, data, config);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Request failed');
     }

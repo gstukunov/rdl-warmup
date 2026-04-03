@@ -129,3 +129,58 @@ export interface WebAppConfig {
   apiBaseUrl: string;
   environment: 'development' | 'production';
 }
+
+// Admin types
+export interface UserOption {
+  telegramId: number;
+  username: string | null;
+  firstName: string;
+  lastName: string | null;
+}
+
+export interface CompletedGame {
+  id: string;
+  name: string;
+  description: string | null;
+  motion: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  createdAt: string;
+  participantCount: number;
+  hasResults: boolean;
+}
+
+export interface PositionResult {
+  telegramId: number | null;
+  isIronman: boolean;
+  score: number;
+}
+
+export interface SubmitGameResultsRequest {
+  gameId: string;
+  motion: string;
+  openingGovernment: PositionResult;
+  openingOpposition: PositionResult;
+  closingGovernment?: PositionResult;
+  closingOpposition?: PositionResult;
+  judgeTelegramId: number;
+}
+
+// Stats types
+export interface SpeakerStat {
+  telegramId: number;
+  username: string | null;
+  firstName: string;
+  lastName: string;
+  gamesPlayed: number;
+  averageScore: number;
+}
+
+export interface JudgeStat {
+  telegramId: number;
+  username: string | null;
+  firstName: string;
+  lastName: string;
+  gamesJudged: number;
+  averageScore: number;
+}

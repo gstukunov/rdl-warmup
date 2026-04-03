@@ -11,6 +11,7 @@ import { JudgeFeedback } from '../game/entities/judge-feedback.entity';
 import { RoomAllocation } from '../game/entities/room-allocation.entity';
 import { RoomParticipant } from '../game/entities/room-participant.entity';
 import { RoomJudge } from '../game/entities/room-judge.entity';
+import { AdminAuthGuard } from './guards/admin-auth.guard';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { RoomJudge } from '../game/entities/room-judge.entity';
     ]),
   ],
   controllers: [WebAppController, StatsController],
-  providers: [WebAppService],
+  providers: [WebAppService, AdminAuthGuard],
+  exports: [AdminAuthGuard],
 })
 export class WebAppModule {}

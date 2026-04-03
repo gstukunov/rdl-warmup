@@ -89,6 +89,50 @@ export interface JoinGameRequestDto {
   role: 'player' | 'judge' | 'wing';
 }
 
+// Admin DTOs
+export interface AdminLoginRequestDto {
+  password: string;
+}
+
+export interface AdminLoginResponseDto {
+  token: string;
+}
+
+export interface UserOptionDto {
+  telegramId: number;
+  username: string | null;
+  firstName: string;
+  lastName: string | null;
+}
+
+export interface CompletedGameListItemDto {
+  id: string;
+  name: string;
+  description: string | null;
+  motion: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  createdAt: string;
+  participantCount: number;
+  hasResults: boolean;
+}
+
+export interface PositionResultDto {
+  telegramId: number | null;
+  isIronman: boolean;
+  score: number;
+}
+
+export interface SubmitGameResultsRequestDto {
+  gameId: string;
+  motion: string;
+  openingGovernment: PositionResultDto;
+  openingOpposition: PositionResultDto;
+  closingGovernment?: PositionResultDto;
+  closingOpposition?: PositionResultDto;
+  judgeTelegramId: number;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;

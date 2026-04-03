@@ -18,4 +18,7 @@ export default () => ({
     botUsername: process.env.TELEGRAM_BOT_USERNAME,
     webAppUrl: process.env.TELEGRAM_WEBAPP_URL,
   },
+  admin: {
+    password: process.env.ADMIN_PASSWORD,
+  },
 });

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -26,6 +27,9 @@ import type {
   JudgeStatsDto,
   RoomAllocationDto,
   GameParticipantDto,
+  UserOptionDto,
+  CompletedGameListItemDto,
+  SubmitGameResultsRequestDto,
 } from './dtos/webapp.dto';
 
 interface SpeakerStat {
@@ -456,6 +460,169 @@ export class WebAppService {
         };
       }),
     );
+  }
+
+  // Admin methods
+
+  async adminLogin(password: string): Promise<string> {
+    const adminPassword = this.configService.get<string>('admin.password');
+    
+    if (!adminPassword) {
+      throw new UnauthorizedException('Admin password not configured');
+    }
+
+    if (password !== adminPassword) {
+      throw new UnauthorizedException('Invalid admin password');
+    }
+
+    // Return a simple token (in production, use JWT)
+    return 'admin_token_' + Date.now();
+  }
+
+  async getUsersForAdmin(): Promise<UserOptionDto[]> {
+    const users = await this.userRepository.find({
+      where: { isActive: true },
+      order: { firstName: 'ASC' },
+    });
+
+    return users.map((user) => ({
+      telegramId: user.telegramId,
+      username: user.username,
+      firstName: user.firstName ?? '',
+      lastName: user.lastName,
+    }));
+  }
+
+  async getCompletedGamesForAdmin(): Promise<CompletedGameListItemDto[]> {
+    const games = await this.gameRepository.find({
+      where: [
+        { status: GameStatus.IN_PROGRESS },
+        { status: GameStatus.COMPLETED },
+      ],
+      relations: ['participants'],
+      order: { createdAt: 'DESC' },
+    });
+
+    // Check which games have results
+    const gameIds = games.map((g) => g.id);
+    const existingScores = await this.speakerScoreRepository
+      .createQueryBuilder('score')
+      .select('score.gameId', 'gameId')
+      .addSelect('COUNT(*)', 'count')
+      .where('score.gameId IN (:...gameIds)', { gameIds })
+      .groupBy('score.gameId')
+      .getRawMany();
+
+    const scoresMap = new Map(
+      existingScores.map((s) => [s.gameId, parseInt(s.count, 10) > 0]),
+    );
+
+    return games.map((game) => ({
+      id: game.id,
+      name: game.name,
+      description: game.description,
+      motion: game.motion,
+      startTime: game.startTime?.toISOString() || null,
+      endTime: game.endTime?.toISOString() || null,
+      createdAt: game.createdAt.toISOString(),
+      participantCount: game.participants?.length || 0,
+      hasResults: scoresMap.get(game.id) || false,
+    }));
+  }
+
+  async getGameDetailsForAdmin(gameId: string): Promise<GameDetailsDto> {
+    const game = await this.gameRepository.findOne({
+      where: { id: gameId },
+      relations: ['participants'],
+    });
+
+    if (!game) {
+      throw new NotFoundException('Game not found');
+    }
+
+    return this.mapGameToDetailsDto(game, 0);
+  }
+
+  async submitGameResults(data: SubmitGameResultsRequestDto): Promise<void> {
+    const game = await this.gameRepository.findOne({
+      where: { id: data.gameId },
+    });
+
+    if (!game) {
+      throw new NotFoundException('Game not found');
+    }
+
+    // Update game motion if provided
+    if (data.motion && !game.motion) {
+      game.motion = data.motion;
+      await this.gameRepository.save(game);
+    }
+
+    const scores: SpeakerScore[] = [];
+
+    // Helper function to create score
+    const createScore = (
+      telegramId: number | null,
+      position: string,
+      scoreValue: number,
+      isIronman: boolean,
+    ) => {
+      if (!telegramId) return;
+      
+      const score = this.speakerScoreRepository.create({
+        gameId: data.gameId,
+        telegramId,
+        position,
+        score: scoreValue,
+        isIronman,
+        judgeTelegramId: data.judgeTelegramId,
+        submittedAt: new Date(),
+      });
+      scores.push(score);
+    };
+
+    // Add scores for each position
+    createScore(
+      data.openingGovernment.telegramId,
+      'opening_government',
+      data.openingGovernment.score,
+      data.openingGovernment.isIronman,
+    );
+
+    createScore(
+      data.openingOpposition.telegramId,
+      'opening_opposition',
+      data.openingOpposition.score,
+      data.openingOpposition.isIronman,
+    );
+
+    if (data.closingGovernment?.telegramId) {
+      createScore(
+        data.closingGovernment.telegramId,
+        'closing_government',
+        data.closingGovernment.score,
+        data.closingGovernment.isIronman,
+      );
+    }
+
+    if (data.closingOpposition?.telegramId) {
+      createScore(
+        data.closingOpposition.telegramId,
+        'closing_opposition',
+        data.closingOpposition.score,
+        data.closingOpposition.isIronman,
+      );
+    }
+
+    // Save all scores
+    if (scores.length > 0) {
+      await this.speakerScoreRepository.save(scores);
+    }
+
+    // Update game status to completed
+    game.status = GameStatus.COMPLETED;
+    game.endTime = new Date();
+    await this.gameRepository.save(game);
   }
 
   private mapGameToDetailsDto(game: Game, telegramId: number): GameDetailsDto {

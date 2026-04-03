@@ -75,6 +75,8 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       # Game Configuration
       GAME_PASSWORD: ${GAME_PASSWORD}
+      # Admin Configuration
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     ports:
       - '3000:3000'
     depends_on:
