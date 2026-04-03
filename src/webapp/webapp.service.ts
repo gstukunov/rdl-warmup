@@ -152,7 +152,7 @@ export class WebAppService {
         telegramId: Number(feedback.telegramId),
         username: user?.username ?? null,
         firstName: user?.firstName ?? '',
-        lastName: user?.firstName ?? '',
+        lastName: user?.lastName ?? '',
         gamesJudged: parseInt(feedback.gamesJudged, 10),
         averageScore: feedback.averageScore
           ? parseFloat(parseFloat(feedback.averageScore).toFixed(1))
