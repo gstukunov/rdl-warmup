@@ -1,11 +1,14 @@
 import React from 'react';
+import { Card as ShadcnCard, CardContent } from '@/shared/ui/card';
 import { useTelegram } from '@/shared/telegram';
+import { cn } from '@/shared/lib';
 
 interface CardProps {
   children: React.ReactNode;
   onClick?: () => void;
   padding?: boolean;
   style?: React.CSSProperties;
+  className?: string;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -13,8 +16,9 @@ export const Card: React.FC<CardProps> = ({
   onClick,
   padding = true,
   style: customStyle,
+  className,
 }) => {
-  const { theme, impactOccurred } = useTelegram();
+  const { impactOccurred } = useTelegram();
 
   const handleClick = () => {
     if (onClick) {
@@ -23,33 +27,18 @@ export const Card: React.FC<CardProps> = ({
     }
   };
 
-  const style: React.CSSProperties = {
-    backgroundColor: theme.secondaryBgColor,
-    borderRadius: '12px',
-    padding: padding ? '16px' : 0,
-    cursor: onClick ? 'pointer' : 'default',
-    transition: 'transform 0.1s ease, opacity 0.1s ease',
-    ...customStyle,
-  };
-
   return (
-    <div
-      style={style}
+    <ShadcnCard
       onClick={onClick ? handleClick : undefined}
-      onTouchStart={(e) => {
-        if (onClick) {
-          e.currentTarget.style.transform = 'scale(0.98)';
-          e.currentTarget.style.opacity = '0.9';
-        }
-      }}
-      onTouchEnd={(e) => {
-        if (onClick) {
-          e.currentTarget.style.transform = 'scale(1)';
-          e.currentTarget.style.opacity = '1';
-        }
-      }}
+      className={cn(
+        'transition-all duration-100',
+        onClick && 'cursor-pointer active:scale-[0.98] active:opacity-90',
+        !padding && '[&>div]:p-0',
+        className
+      )}
+      style={customStyle}
     >
-      {children}
-    </div>
+      <CardContent className={cn(!padding && 'p-0')}>{children}</CardContent>
+    </ShadcnCard>
   );
 };

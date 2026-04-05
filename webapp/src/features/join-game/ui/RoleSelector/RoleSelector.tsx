@@ -65,8 +65,7 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({
         <Button
           onClick={onJoin}
           loading={isLoading}
-          fullWidth
-          style={{ marginTop: '12px' }}
+          className="w-full mt-3"
         >
           Join as {selectedRole}
         </Button>

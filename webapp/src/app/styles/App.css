@@ -1,6 +1,6 @@
+/* App-specific styles */
 .app-container {
   min-height: 100vh;
-  background-color: var(--tg-theme-bg-color, #ffffff);
 }
 
 .admin-nav {
@@ -16,8 +16,6 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background-color: var(--tg-theme-bg-color, #ffffff);
-  color: var(--tg-theme-text-color, #000000);
 }
 
 .loading {

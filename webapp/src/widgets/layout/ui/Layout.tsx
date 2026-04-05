@@ -1,11 +1,13 @@
 import React from 'react';
 import { useTelegram } from '@/shared/telegram';
+import { cn } from '@/shared/lib';
 
 interface LayoutProps {
   children: React.ReactNode;
   header?: React.ReactNode;
   footer?: React.ReactNode;
   padding?: boolean;
+  className?: string;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -13,48 +15,25 @@ export const Layout: React.FC<LayoutProps> = ({
   header,
   footer,
   padding = true,
+  className,
 }) => {
-  const { theme, viewportHeight } = useTelegram();
-
-  const layoutStyle: React.CSSProperties = {
-    minHeight: `${viewportHeight}px`,
-    backgroundColor: theme.bgColor,
-    color: theme.textColor,
-    display: 'flex',
-    flexDirection: 'column',
-  };
-
-  const contentStyle: React.CSSProperties = {
-    flex: 1,
-    overflowY: 'auto',
-    padding: padding ? '16px' : 0,
-  };
+  const { viewportHeight } = useTelegram();
 
   return (
-    <div style={layoutStyle}>
+    <div 
+      className={cn('flex flex-col bg-telegram-bg text-telegram-text', className)}
+      style={{ minHeight: `${viewportHeight}px` }}
+    >
       {header && (
-        <header
-          style={{
-            padding: '16px',
-            borderBottom: `1px solid ${theme.secondaryBgColor}`,
-            backgroundColor: theme.bgColor,
-            position: 'sticky',
-            top: 0,
-            zIndex: 10,
-          }}
-        >
+        <header className="sticky top-0 z-10 px-4 py-4 border-b border-telegram-secondary-bg bg-telegram-bg">
           {header}
         </header>
       )}
-      <main style={contentStyle}>{children}</main>
+      <main className={cn('flex-1 overflow-y-auto', padding && 'p-4')}>
+        {children}
+      </main>
       {footer && (
-        <footer
-          style={{
-            padding: '16px',
-            borderTop: `1px solid ${theme.secondaryBgColor}`,
-            backgroundColor: theme.bgColor,
-          }}
-        >
+        <footer className="px-4 py-4 border-t border-telegram-secondary-bg bg-telegram-bg">
           {footer}
         </footer>
       )}

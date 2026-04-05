@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Layout } from '@/widgets/layout';
-import { Card, Button, SearchableSelect } from '@/shared/ui';
+import { Card, CardContent } from '@/shared/ui/card';
+import { Button, Input, Label } from '@/shared/ui';
+import { SearchableSelect } from '@/shared/ui/SearchableSelect';
 import { useUsers, useCreateCompletedGame } from '@/entities/admin';
 import {
   createDefaultPositionResults,
@@ -15,7 +17,6 @@ import {
 } from '@/entities/admin';
 import { formatUserOptionDisplayName } from '@/entities/admin';
 import type { UserOption } from '@/entities/admin';
-import './AdminResultsPage.css';
 
 interface AdminResultsPageProps {
   onLogout: () => void;
@@ -108,10 +109,10 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
   if (isLoadingUsers) {
     return (
       <Layout
-        header={<h1 className="page-title">Создание игры с результатами</h1>}
+        header={<h1 className="text-lg font-semibold">Создание игры с результатами</h1>}
       >
-        <div className="loading-container">
-          <div className="loading">Загрузка...</div>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-telegram-hint">Загрузка...</div>
         </div>
       </Layout>
     );
@@ -120,116 +121,160 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
   return (
     <Layout
       header={
-        <div className="page-header">
-          <h1 className="page-title">Создание игры с результатами</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold">Создание игры с результатами</h1>
           <Button onClick={onLogout} variant="secondary" size="sm">
             Выйти
           </Button>
         </div>
       }
     >
-      <div className="results-container">
+      <div className="p-4 space-y-4 pb-24">
         {success && (
-          <div className="success-message">
+          <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-green-500 text-sm font-medium">
             {VALIDATION_MESSAGES.SAVE_SUCCESS}
           </div>
         )}
 
-        {formError && <div className="error-message">{formError}</div>}
+        {formError && (
+          <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium">
+            {formError}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit} className="results-form">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <Card>
-            <h2 className="section-title">Информация об игре</h2>
-            <div className="form-group">
-              <label className="form-label">Название игры</label>
-              <input
-                type="text"
-                value={gameName}
-                onChange={(e) => setGameName(e.target.value)}
-                className="form-input"
-                placeholder="Введите название игры"
-                disabled={isSubmitting}
-              />
-            </div>
+            <CardContent className="p-4 space-y-4">
+              <h2 className="text-lg font-semibold">Информация об игре</h2>
+              
+              <div className="space-y-2">
+                <Label htmlFor="gameName">Название игры</Label>
+                <Input
+                  id="gameName"
+                  type="text"
+                  value={gameName}
+                  onChange={(e) => setGameName(e.target.value)}
+                  placeholder="Введите название игры"
+                  disabled={isSubmitting}
+                />
+              </div>
 
-            <div className="form-group">
-              <label className="form-label">Тема</label>
-              <input
-                type="text"
-                value={motion}
-                onChange={(e) => setMotion(e.target.value)}
-                className="form-input"
-                placeholder="Введите тему дебатов"
-                disabled={isSubmitting}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="motion">Тема</Label>
+                <Input
+                  id="motion"
+                  type="text"
+                  value={motion}
+                  onChange={(e) => setMotion(e.target.value)}
+                  placeholder="Введите тему дебатов"
+                  disabled={isSubmitting}
+                />
+              </div>
 
-            <div className="form-group">
-              <label className="form-label">Судья</label>
-              <SearchableSelect
-                value={selectedJudgeId}
-                onChange={(value) => setSelectedJudgeId(value as number | null)}
-                options={userOptions}
-                placeholder="Выберите судью"
-                disabled={isSubmitting}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label>Судья</Label>
+                <SearchableSelect
+                  value={selectedJudgeId}
+                  onChange={(value) => setSelectedJudgeId(value as number | null)}
+                  options={userOptions}
+                  placeholder="Выберите судью"
+                  disabled={isSubmitting}
+                />
+              </div>
+            </CardContent>
           </Card>
 
           <Card>
-            <h2 className="section-title">Позиции и оценки</h2>
+            <CardContent className="p-4 space-y-6">
+              <h2 className="text-lg font-semibold">Позиции и оценки</h2>
 
-            {RESULTS_POSITION_CONFIG.map((pos) => {
-              const positionData = positionResults[pos.key];
-              const isIronman = positionData.isIronman;
+              {RESULTS_POSITION_CONFIG.map((pos) => {
+                const positionData = positionResults[pos.key];
+                const isIronman = positionData.isIronman;
 
-              return (
-                <div key={pos.key} className="position-section">
-                  <div className="position-header">
-                    <h3 className="position-title">
-                      {pos.label}
-                      {!pos.required && (
-                        <span className="optional"> (опционально)</span>
-                      )}
-                    </h3>
-                    <label className="checkbox-label ironman-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={isIronman}
-                        onChange={(e) =>
-                          handleIronmanChange(pos.key, e.target.checked)
-                        }
-                        className="checkbox-input"
-                        disabled={isSubmitting}
-                      />
-                      <span className="checkbox-text">Ironman</span>
-                    </label>
-                  </div>
+                return (
+                  <div key={pos.key} className="space-y-3 pb-6 border-b border-telegram-secondary-bg last:border-0 last:pb-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold">
+                        {pos.label}
+                        {!pos.required && (
+                          <span className="text-telegram-hint font-normal text-sm"> (опционально)</span>
+                        )}
+                      </h3>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isIronman}
+                          onChange={(e) =>
+                            handleIronmanChange(pos.key, e.target.checked)
+                          }
+                          className="w-4 h-4 rounded border-telegram-hint"
+                          disabled={isSubmitting}
+                        />
+                        <span className="text-sm">Ironman</span>
+                      </label>
+                    </div>
 
-                  <div className="speaker-row">
-                    <span className="speaker-label">
-                      {isIronman ? 'Спикер (обе речи)' : 'Спикер 1'}
-                    </span>
-                    <div className="speaker-fields">
-                      <SearchableSelect
-                        value={positionData.speaker1.telegramId}
-                        onChange={(value) =>
-                          handleSpeakerChange(
-                            pos.key,
-                            'speaker1',
-                            'telegramId',
-                            value as number | null,
-                          )
-                        }
-                        options={userOptions}
-                        placeholder={pos.required ? 'Выберите спикера' : 'Не выбрано'}
-                        className="speaker-select"
-                        disabled={isSubmitting}
-                      />
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm text-telegram-hint w-20 shrink-0">
+                          {isIronman ? 'Спикер (обе речи)' : 'Спикер 1'}
+                        </span>
+                        <SearchableSelect
+                          value={positionData.speaker1.telegramId}
+                          onChange={(value: number | null) =>
+                            handleSpeakerChange(
+                              pos.key,
+                              'speaker1',
+                              'telegramId',
+                              value,
+                            )
+                          }
+                          options={userOptions}
+                          placeholder={pos.required ? 'Выберите спикера' : 'Не выбрано'}
+                          disabled={isSubmitting}
+                          className="flex-1 min-w-[200px]"
+                        />
 
-                      {isIronman ? (
-                        <>
-                          <input
+                        {isIronman ? (
+                          <>
+                            <Input
+                              type="number"
+                              min={SCORE_CONSTRAINTS.min}
+                              max={SCORE_CONSTRAINTS.max}
+                              value={positionData.speaker1.score}
+                              onChange={(e) =>
+                                handleSpeakerChange(
+                                  pos.key,
+                                  'speaker1',
+                                  'score',
+                                  Number(e.target.value),
+                                )
+                              }
+                              className="w-20"
+                              placeholder="Балл 1"
+                              disabled={isSubmitting}
+                            />
+                            <Input
+                              type="number"
+                              min={SCORE_CONSTRAINTS.min}
+                              max={SCORE_CONSTRAINTS.max}
+                              value={positionData.speaker2.score}
+                              onChange={(e) =>
+                                handleSpeakerChange(
+                                  pos.key,
+                                  'speaker2',
+                                  'score',
+                                  Number(e.target.value),
+                                )
+                              }
+                              className="w-20"
+                              placeholder="Балл 2"
+                              disabled={isSubmitting}
+                            />
+                          </>
+                        ) : (
+                          <Input
                             type="number"
                             min={SCORE_CONSTRAINTS.min}
                             max={SCORE_CONSTRAINTS.max}
@@ -242,81 +287,33 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
                                 Number(e.target.value),
                               )
                             }
-                            className="form-input score-input"
-                            placeholder="Балл 1"
+                            className="w-20"
+                            placeholder="Балл"
                             disabled={isSubmitting}
                           />
-                          <input
-                            type="number"
-                            min={SCORE_CONSTRAINTS.min}
-                            max={SCORE_CONSTRAINTS.max}
-                            value={positionData.speaker2.score}
-                            onChange={(e) =>
-                              handleSpeakerChange(
-                                pos.key,
-                                'speaker2',
-                                'score',
-                                Number(e.target.value),
-                              )
-                            }
-                            className="form-input score-input"
-                            placeholder="Балл 2"
-                            disabled={isSubmitting}
-                          />
-                        </>
-                      ) : (
-                        <input
-                          type="number"
-                          min={SCORE_CONSTRAINTS.min}
-                          max={SCORE_CONSTRAINTS.max}
-                          value={positionData.speaker1.score}
-                          onChange={(e) =>
-                            handleSpeakerChange(
-                              pos.key,
-                              'speaker1',
-                              'score',
-                              Number(e.target.value),
-                            )
-                          }
-                          className="form-input score-input"
-                          placeholder="Балл"
-                          disabled={isSubmitting}
-                        />
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {!isIronman && (
-                    <div className="speaker-row">
-                      <span className="speaker-label">Спикер 2</span>
-                      <div className="speaker-fields">
-                        <select
-                          value={positionData.speaker2.telegramId || ''}
-                          onChange={(e) =>
+                    {!isIronman && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm text-telegram-hint w-20 shrink-0">Спикер 2</span>
+                        <SearchableSelect
+                          value={positionData.speaker2.telegramId}
+                          onChange={(value: number | null) =>
                             handleSpeakerChange(
                               pos.key,
                               'speaker2',
                               'telegramId',
-                              e.target.value ? Number(e.target.value) : null,
+                              value,
                             )
                           }
-                          className="form-select speaker-select"
+                          options={userOptions}
+                          placeholder={pos.required ? 'Выберите спикера' : 'Не выбрано'}
                           disabled={isSubmitting}
-                        >
-                          <option value="">
-                            {pos.required ? 'Выберите спикера' : 'Не выбрано'}
-                          </option>
-                          {users.map((user: UserOption) => (
-                            <option
-                              key={user.telegramId}
-                              value={user.telegramId}
-                            >
-                              {formatUserOptionDisplayName(user)}
-                            </option>
-                          ))}
-                        </select>
-
-                        <input
+                          className="flex-1 min-w-[200px]"
+                        />
+                        <Input
                           type="number"
                           min={SCORE_CONSTRAINTS.min}
                           max={SCORE_CONSTRAINTS.max}
@@ -329,21 +326,21 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
                               Number(e.target.value),
                             )
                           }
-                          className="form-input score-input"
+                          className="w-20"
                           placeholder="Балл"
                           disabled={isSubmitting}
                         />
                       </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                    )}
+                  </div>
+                );
+              })}
+            </CardContent>
           </Card>
 
           <Button
             type="submit"
-            fullWidth
+            className="w-full"
             loading={isSubmitting}
             disabled={isSubmitting}
             size="lg"

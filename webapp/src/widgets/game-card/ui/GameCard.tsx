@@ -1,7 +1,7 @@
 import React from 'react';
-import { useTelegram } from '@/shared/telegram';
-import { Card } from '@/shared/ui';
+import { Card, CardContent } from '@/shared/ui';
 import { GameStatusBadge, type Game } from '@/entities/game';
+import { cn } from '@/shared/lib';
 
 interface GameCardProps {
   game: Game;
@@ -9,55 +9,40 @@ interface GameCardProps {
 }
 
 export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
-  const { theme } = useTelegram();
-
   return (
-    <Card onClick={onClick}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '17px' }}>{game.name}</h3>
-          <p
-            style={{
-              margin: 0,
-              fontSize: '14px',
-              color: theme.hintColor,
-              lineHeight: 1.4,
-            }}
-          >
-            {game.description || 'No description'}
-          </p>
+    <Card 
+      onClick={onClick}
+      className={cn(
+        'cursor-pointer transition-all duration-100 active:scale-[0.98]',
+        onClick && 'hover:opacity-90'
+      )}
+    >
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold mb-2 truncate">{game.name}</h3>
+            <p className="text-sm text-telegram-hint leading-relaxed line-clamp-2">
+              {game.description || 'No description'}
+            </p>
+          </div>
+          <GameStatusBadge status={game.status} />
         </div>
-        <GameStatusBadge status={game.status} />
-      </div>
-      <div
-        style={{
-          marginTop: '12px',
-          paddingTop: '12px',
-          borderTop: `1px solid ${theme.bgColor}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <span style={{ fontSize: '14px', color: theme.hintColor }}>
-          👥 {game.participantCount}/{game.maxParticipants} participants
-        </span>
-        {game.isUserRegistered ? (
-          <span
-            style={{
-              fontSize: '13px',
-              color: '#27ae60',
-              fontWeight: 600,
-            }}
-          >
-            ✓ Joined
+        
+        <div className="mt-3 pt-3 border-t border-telegram-bg flex justify-between items-center">
+          <span className="text-sm text-telegram-hint">
+            👥 {game.participantCount}/{game.maxParticipants} participants
           </span>
-        ) : (
-          <span style={{ fontSize: '13px', color: theme.linkColor }}>
-            Join →
-          </span>
-        )}
-      </div>
+          {game.isUserRegistered ? (
+            <span className="text-sm font-semibold text-green-500">
+              ✓ Joined
+            </span>
+          ) : (
+            <span className="text-sm text-telegram-link">
+              Join →
+            </span>
+          )}
+        </div>
+      </CardContent>
     </Card>
   );
 };

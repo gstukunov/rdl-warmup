@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button as ShadcnButton } from '@/shared/ui/button';
 import { useTelegram } from '@/shared/telegram';
 
 interface ButtonProps {
@@ -11,6 +12,7 @@ interface ButtonProps {
   fullWidth?: boolean;
   size?: 'sm' | 'md' | 'lg';
   style?: React.CSSProperties;
+  className?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -23,8 +25,9 @@ export const Button: React.FC<ButtonProps> = ({
   fullWidth = false,
   size = 'md',
   style: customStyle,
+  className,
 }) => {
-  const { theme, impactOccurred } = useTelegram();
+  const { impactOccurred } = useTelegram();
 
   const handleClick = () => {
     if (!disabled && !loading && onClick) {
@@ -33,70 +36,32 @@ export const Button: React.FC<ButtonProps> = ({
     }
   };
 
-  const getBackgroundColor = () => {
-    if (disabled) return theme.hintColor;
-    switch (variant) {
-      case 'primary':
-        return theme.buttonColor;
-      case 'secondary':
-        return theme.secondaryBgColor;
-      case 'danger':
-        return '#e74c3c';
-      default:
-        return theme.buttonColor;
-    }
+  // Map old variant names to shadcn variants
+  const variantMap: Record<string, 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link'> = {
+    primary: 'default',
+    secondary: 'secondary',
+    danger: 'destructive',
   };
 
-  const getTextColor = () => {
-    if (variant === 'secondary') return theme.textColor;
-    return variant === 'primary' ? theme.buttonTextColor : '#ffffff';
-  };
-
-  const getPadding = () => {
-    switch (size) {
-      case 'sm':
-        return '8px 16px';
-      case 'lg':
-        return '16px 24px';
-      default:
-        return '12px 20px';
-    }
-  };
-
-  const getFontSize = () => {
-    switch (size) {
-      case 'sm':
-        return '14px';
-      case 'lg':
-        return '18px';
-      default:
-        return '16px';
-    }
-  };
-
-  const style: React.CSSProperties = {
-    backgroundColor: getBackgroundColor(),
-    color: getTextColor(),
-    border: 'none',
-    borderRadius: '8px',
-    padding: getPadding(),
-    fontSize: getFontSize(),
-    fontWeight: 600,
-    cursor: disabled || loading ? 'not-allowed' : 'pointer',
-    width: fullWidth ? '100%' : 'auto',
-    opacity: disabled || loading ? 0.6 : 1,
-    transition: 'opacity 0.2s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    ...customStyle,
+  // Map old size names to shadcn sizes
+  const sizeMap: Record<string, 'default' | 'sm' | 'lg' | 'icon'> = {
+    sm: 'sm',
+    md: 'default',
+    lg: 'lg',
   };
 
   return (
-    <button type={type} style={style} onClick={handleClick} disabled={disabled || loading}>
-      {loading && <span>⏳</span>}
+    <ShadcnButton
+      type={type}
+      onClick={handleClick}
+      disabled={disabled}
+      loading={loading}
+      variant={variantMap[variant]}
+      size={sizeMap[size]}
+      className={`${fullWidth ? 'w-full' : ''} ${className || ''}`}
+      style={customStyle}
+    >
       {children}
-    </button>
+    </ShadcnButton>
   );
 };

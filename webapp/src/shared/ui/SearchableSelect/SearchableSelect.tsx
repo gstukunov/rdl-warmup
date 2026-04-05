@@ -1,5 +1,12 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import './SearchableSelect.css';
+import React from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select';
+import { cn } from '@/shared/lib';
 
 interface SearchableSelectOption {
   value: string | number;
@@ -8,7 +15,7 @@ interface SearchableSelectOption {
 
 interface SearchableSelectProps {
   value: string | number | null;
-  onChange: (value: string | number | null) => void;
+  onChange: (value: any) => void;
   options: SearchableSelectOption[];
   placeholder?: string;
   disabled?: boolean;
@@ -19,139 +26,64 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   value,
   onChange,
   options,
-  placeholder = 'Search...',
+  placeholder = 'Select...',
   disabled = false,
-  className = '',
+  className,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const selectedOption = useMemo(() => {
-    return options.find((opt) => opt.value === value);
-  }, [value, options]);
-
-  const filteredOptions = useMemo(() => {
-    if (!searchTerm.trim()) return options;
-    const lowerSearch = searchTerm.toLowerCase();
-    return options.filter((opt) =>
-      opt.label.toLowerCase().includes(lowerSearch)
-    );
-  }, [searchTerm, options]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-        setSearchTerm('');
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isOpen]);
-
-  const handleToggle = () => {
-    if (!disabled) {
-      setIsOpen(!isOpen);
-      if (!isOpen) {
-        setSearchTerm('');
-      }
+  const handleChange = (newValue: string) => {
+    // Try to find if it's a number option
+    const option = options.find((opt) => String(opt.value) === newValue);
+    if (option) {
+      onChange(option.value);
+    } else {
+      onChange(newValue);
     }
   };
 
-  const handleSelect = (selectedValue: string | number) => {
-    onChange(selectedValue);
-    setIsOpen(false);
-    setSearchTerm('');
-  };
-
-  const handleClear = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleClear = () => {
     onChange(null);
-    setSearchTerm('');
   };
 
   return (
-    <div
-      ref={containerRef}
-      className={`searchable-select ${className} ${isOpen ? 'is-open' : ''} ${
-        disabled ? 'is-disabled' : ''
-      }`}
-    >
-      <div className="searchable-select__trigger" onClick={handleToggle}>
-        {isOpen ? (
-          <input
-            ref={inputRef}
-            type="text"
-            className="searchable-select__input"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={placeholder}
-            onClick={(e) => e.stopPropagation()}
-          />
-        ) : (
-          <span
-            className={`searchable-select__value ${
-              !selectedOption ? 'placeholder' : ''
-            }`}
+    <div className={cn('relative', className)}>
+      <Select
+        value={value !== null ? String(value) : undefined}
+        onValueChange={handleChange}
+        disabled={disabled}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={String(option.value)} value={String(option.value)}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {value !== null && !disabled && (
+        <button
+          type="button"
+          onClick={handleClear}
+          className="absolute right-8 top-1/2 -translate-y-1/2 text-telegram-hint hover:text-telegram-text p-1"
+          aria-label="Clear selection"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            {selectedOption ? selectedOption.label : placeholder}
-          </span>
-        )}
-
-        <div className="searchable-select__actions">
-          {value && !isOpen && (
-            <button
-              type="button"
-              className="searchable-select__clear"
-              onClick={handleClear}
-              aria-label="Clear selection"
-            >
-              ×
-            </button>
-          )}
-          <span className="searchable-select__arrow">▼</span>
-        </div>
-      </div>
-
-      {isOpen && (
-        <div className="searchable-select__dropdown">
-          {filteredOptions.length === 0 ? (
-            <div className="searchable-select__empty">
-              Ничего не найдено
-            </div>
-          ) : (
-            <ul className="searchable-select__list">
-              {filteredOptions.map((option) => (
-                <li
-                  key={option.value}
-                  className={`searchable-select__item ${
-                    option.value === value ? 'is-selected' : ''
-                  }`}
-                  onClick={() => handleSelect(option.value)}
-                >
-                  {option.label}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
       )}
     </div>
   );

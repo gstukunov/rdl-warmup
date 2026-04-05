@@ -1,3 +1,17 @@
-export { Button } from './Button';
-export { Card } from './Card';
-export { SearchableSelect } from './SearchableSelect';
+// shadcn/ui components
+export * from './button';
+export * from './card';
+export * from './input';
+export * from './label';
+export * from './badge';
+export * from './skeleton';
+export * from './separator';
+export * from './select';
+export * from './dialog';
+export * from './tabs';
+export * from './toast';
+
+// Legacy wrapped components (backward compatibility)
+export { Button } from './Button/Button';
+export { Card } from './Card/Card';
+export { SearchableSelect } from './SearchableSelect/SearchableSelect';

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Layout } from '@/widgets/layout';
-import { Card, Button } from '@/shared/ui';
+import { Card, CardContent } from '@/shared/ui/card';
+import { Button, Input, Label } from '@/shared/ui';
 import { useAdminLogin } from '@/features/admin-auth';
-import './AdminLoginPage.css';
 
 interface AdminLoginPageProps {
   onLogin: () => void;
@@ -35,36 +35,40 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onLogin }) => {
   };
 
   return (
-    <Layout header={<h1 className="login-title">Вход в панель админа</h1>}>
-      <div className="login-container">
-        <Card>
-          <form onSubmit={handleSubmit} className="login-form">
-            <div className="form-group">
-              <label htmlFor="password" className="form-label">
-                Пароль администратора
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="form-input"
-                placeholder="Введите пароль"
+    <Layout 
+      header={<h1 className="text-lg font-semibold">Вход в панель админа</h1>}
+      className="bg-telegram-bg"
+    >
+      <div className="flex items-center justify-center min-h-[50vh] p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Пароль администратора</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Введите пароль"
+                  disabled={loginMutation.isPending}
+                />
+              </div>
+
+              {error && (
+                <div className="text-sm text-destructive font-medium">{error}</div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full"
+                loading={loginMutation.isPending}
                 disabled={loginMutation.isPending}
-              />
-            </div>
-
-            {error && <div className="error-message">{error}</div>}
-
-            <Button
-              type="submit"
-              fullWidth
-              loading={loginMutation.isPending}
-              disabled={loginMutation.isPending}
-            >
-              Войти
-            </Button>
-          </form>
+              >
+                Войти
+              </Button>
+            </form>
+          </CardContent>
         </Card>
       </div>
     </Layout>
