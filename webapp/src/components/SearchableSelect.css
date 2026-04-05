@@ -1,0 +1,183 @@
+.searchable-select {
+  position: relative;
+  width: 100%;
+}
+
+.searchable-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border: 1px solid var(--tg-theme-hint-color, #ccc);
+  border-radius: 8px;
+  background-color: var(--tg-theme-bg-color, #fff);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.searchable-select__trigger:hover {
+  border-color: var(--tg-theme-button-color, #2481cc);
+}
+
+.searchable-select.is-open .searchable-select__trigger {
+  border-color: var(--tg-theme-button-color, #2481cc);
+  box-shadow: 0 0 0 2px rgba(36, 129, 204, 0.1);
+}
+
+.searchable-select.is-disabled .searchable-select__trigger {
+  background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.searchable-select__value {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--tg-theme-text-color, #000);
+  font-size: 16px;
+}
+
+.searchable-select__value.placeholder {
+  color: var(--tg-theme-hint-color, #999);
+}
+
+.searchable-select__input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  color: var(--tg-theme-text-color, #000);
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+.searchable-select__input::placeholder {
+  color: var(--tg-theme-hint-color, #999);
+}
+
+.searchable-select__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.searchable-select__clear {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--tg-theme-hint-color, #999);
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.searchable-select__clear:hover {
+  background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+  color: var(--tg-theme-text-color, #000);
+}
+
+.searchable-select__arrow {
+  font-size: 10px;
+  color: var(--tg-theme-hint-color, #999);
+  transition: transform 0.2s ease;
+}
+
+.searchable-select.is-open .searchable-select__arrow {
+  transform: rotate(180deg);
+}
+
+.searchable-select__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  background-color: var(--tg-theme-bg-color, #fff);
+  border: 1px solid var(--tg-theme-hint-color, #ccc);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.searchable-select__list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.searchable-select__item {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--tg-theme-text-color, #000);
+  transition: background-color 0.15s ease;
+  border-bottom: 1px solid var(--tg-theme-secondary-bg-color, #f0f0f0);
+}
+
+.searchable-select__item:last-child {
+  border-bottom: none;
+}
+
+.searchable-select__item:hover {
+  background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+}
+
+.searchable-select__item.is-selected {
+  background-color: var(--tg-theme-button-color, #2481cc);
+  color: var(--tg-theme-button-text-color, #fff);
+}
+
+.searchable-select__empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--tg-theme-hint-color, #999);
+  font-size: 14px;
+}
+
+/* Scrollbar styling */
+.searchable-select__dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.searchable-select__dropdown::-webkit-scrollbar-track {
+  background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+  border-radius: 4px;
+}
+
+.searchable-select__dropdown::-webkit-scrollbar-thumb {
+  background: var(--tg-theme-hint-color, #ccc);
+  border-radius: 4px;
+}
+
+.searchable-select__dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--tg-theme-hint-color, #999);
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .searchable-select__dropdown {
+    max-height: 240px;
+  }
+
+  .searchable-select__item {
+    padding: 14px 16px;
+    font-size: 16px;
+  }
+}

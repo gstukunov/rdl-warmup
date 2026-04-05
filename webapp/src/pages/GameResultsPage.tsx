@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Layout } from '../components/Layout';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import { SearchableSelect } from '../components/SearchableSelect';
 import { adminApi } from '../api/admin';
 import type {
   UserOption,
@@ -66,7 +67,7 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
   // Form state
   const [gameName, setGameName] = useState('');
   const [motion, setMotion] = useState('');
-  const [selectedJudgeId, setSelectedJudgeId] = useState<string>('');
+  const [selectedJudgeId, setSelectedJudgeId] = useState<number | null>(null);
   const [positionResults, setPositionResults] = useState<
     Record<string, PositionResult>
   >({
@@ -156,7 +157,7 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
       return;
     }
 
-    if (!selectedJudgeId) {
+    if (selectedJudgeId === null) {
       setError('Выберите судью');
       return;
     }
@@ -180,7 +181,7 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
       motion: motion.trim(),
       openingGovernment: og,
       openingOpposition: oo,
-      judgeTelegramId: Number(selectedJudgeId),
+      judgeTelegramId: selectedJudgeId,
     };
 
     // Add optional positions if both speakers are selected
@@ -209,7 +210,7 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
       // Reset form
       setGameName('');
       setMotion('');
-      setSelectedJudgeId('');
+      setSelectedJudgeId(null);
       setPositionResults({
         openingGovernment: createDefaultPosition(),
         openingOpposition: createDefaultPosition(),
@@ -223,6 +224,14 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
       setSubmitting(false);
     }
   };
+
+  // Memoize user options for searchable selects
+  const userOptions = useMemo(() => {
+    return users.map((user) => ({
+      value: user.telegramId,
+      label: getUserDisplayName(user),
+    }));
+  }, [users]);
 
   const getUserDisplayName = (user: UserOption) => {
     let name = user.firstName;
@@ -295,18 +304,12 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
 
             <div className="form-group">
               <label className="form-label">Судья</label>
-              <select
+              <SearchableSelect
                 value={selectedJudgeId}
-                onChange={(e) => setSelectedJudgeId(e.target.value)}
-                className="form-select"
-              >
-                <option value="">Выберите судью</option>
-                {users.map((user) => (
-                  <option key={user.telegramId} value={user.telegramId}>
-                    {getUserDisplayName(user)}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setSelectedJudgeId(value as number | null)}
+                options={userOptions}
+                placeholder="Выберите судью"
+              />
             </div>
           </Card>
 
@@ -346,27 +349,20 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
                       {isIronman ? 'Спикер (обе речи)' : 'Спикер 1'}
                     </span>
                     <div className="speaker-fields">
-                      <select
-                        value={positionData.speaker1.telegramId || ''}
-                        onChange={(e) =>
+                      <SearchableSelect
+                        value={positionData.speaker1.telegramId}
+                        onChange={(value) =>
                           handleSpeakerChange(
                             pos.key,
                             'speaker1',
                             'telegramId',
-                            e.target.value ? Number(e.target.value) : null,
+                            value as number | null,
                           )
                         }
-                        className="form-select speaker-select"
-                      >
-                        <option value="">
-                          {pos.required ? 'Выберите спикера' : 'Не выбрано'}
-                        </option>
-                        {users.map((user) => (
-                          <option key={user.telegramId} value={user.telegramId}>
-                            {getUserDisplayName(user)}
-                          </option>
-                        ))}
-                      </select>
+                        options={userOptions}
+                        placeholder={pos.required ? 'Выберите спикера' : 'Не выбрано'}
+                        className="speaker-select"
+                      />
 
                       {isIronman ? (
                         // Ironman: two score inputs for the same speaker

@@ -219,10 +219,10 @@
   display: grid;
   grid-template-columns: 1fr 80px;
   gap: 12px;
-  align-items: center;
+  align-items: flex-start;
 }
 
-.speaker-fields:has(.score-input:nth-child(2)) {
+.speaker-fields:has(.score-input:nth-child(3)) {
   grid-template-columns: 1fr 80px 80px;
 }
 
@@ -251,7 +251,7 @@
     grid-template-columns: 1fr;
   }
 
-  .speaker-fields:has(.score-input:nth-child(2)) {
+  .speaker-fields:has(.score-input:nth-child(3)) {
     grid-template-columns: 1fr 1fr;
   }
 
