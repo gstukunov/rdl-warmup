@@ -1,50 +1,38 @@
 import React, { useState, useEffect } from 'react';
+import { QueryProvider } from './providers';
 import { StatsPage, AdminLoginPage, AdminResultsPage } from '@/pages';
 import { Button } from '@/shared/ui';
-import { adminAuthApi } from '@/features/admin-auth';
+import { adminApi } from '@/entities/admin';
 import './styles/App.css';
 
 type View = 'stats' | 'admin-login' | 'admin-results';
 
-const App: React.FC = () => {
-  console.log('[APP] Component mounting...');
-
+const AppContent: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('stats');
   const [isAdmin, setIsAdmin] = useState(false);
   const [checking, setChecking] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('[APP] useEffect running...');
-    try {
-      const token = adminAuthApi.getToken();
-      console.log('[APP] Admin token exists:', !!token);
-      if (token) {
-        setIsAdmin(true);
-      }
-    } catch (err) {
-      console.error('[APP] Error checking auth:', err);
-      setError('Auth check failed');
-    } finally {
-      setChecking(false);
+    // Check if admin token exists
+    const token = adminApi.getToken();
+    if (token) {
+      setIsAdmin(true);
     }
+    setChecking(false);
   }, []);
 
   const handleLogin = () => {
-    console.log('[APP] Login successful');
     setIsAdmin(true);
     setCurrentView('admin-results');
   };
 
   const handleLogout = () => {
-    console.log('[APP] Logging out');
-    adminAuthApi.logout();
+    adminApi.clearToken();
     setIsAdmin(false);
     setCurrentView('stats');
   };
 
   const navigateToAdmin = () => {
-    console.log('[APP] Navigating to admin');
     if (isAdmin) {
       setCurrentView('admin-results');
     } else {
@@ -53,24 +41,13 @@ const App: React.FC = () => {
   };
 
   const navigateToStats = () => {
-    console.log('[APP] Navigating to stats');
     setCurrentView('stats');
   };
-
-  console.log('[APP] Render - checking:', checking, 'error:', error, 'view:', currentView);
 
   if (checking) {
     return (
       <div className="loading-screen">
         <div className="loading">Загрузка...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="error-screen">
-        <div className="error">Ошибка: {error}</div>
       </div>
     );
   }
@@ -106,6 +83,14 @@ const App: React.FC = () => {
   }
 
   return null;
+};
+
+const App: React.FC = () => {
+  return (
+    <QueryProvider>
+      <AppContent />
+    </QueryProvider>
+  );
 };
 
 export default App;

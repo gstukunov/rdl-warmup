@@ -9,14 +9,15 @@
 3. [Project Structure (FSD)](#project-structure-fsd)
 4. [Layer Descriptions](#layer-descriptions)
 5. [Import Rules](#import-rules)
-6. [Frontend](#frontend)
-7. [Backend API](#backend-api)
-8. [Authentication](#authentication)
-9. [Development](#development)
-10. [Deployment](#deployment)
-11. [Telegram SDK](#telegram-sdk)
-12. [Styling](#styling)
-13. [Common Tasks](#common-tasks)
+6. [Data Fetching (React Query)](#data-fetching-react-query)
+7. [Frontend](#frontend)
+8. [Backend API](#backend-api)
+9. [Authentication](#authentication)
+10. [Development](#development)
+11. [Deployment](#deployment)
+12. [Telegram SDK](#telegram-sdk)
+13. [Styling](#styling)
+14. [Common Tasks](#common-tasks)
 
 ---
 
@@ -53,6 +54,7 @@ The Telegram Mini App provides a native mobile experience for managing BP debate
 │  React SPA (webapp/)                                         │
 │  - React 18 + TypeScript                                     │
 │  - Feature-Sliced Design (FSD) Architecture                  │
+│  - TanStack Query for data fetching                          │
 │  - Telegram SDK (@telegram-apps/sdk)                         │
 │  - Axios for API calls                                       │
 └──────────────┬──────────────────────────────────────────────┘
@@ -219,6 +221,199 @@ import { Layout, GameCard } from '@/widgets';
 
 // Pages
 import { StatsPage, AdminLoginPage } from '@/pages';
+```
+
+---
+
+## Data Fetching (React Query)
+
+This project uses **[TanStack Query (React Query)](https://tanstack.com/query/latest)** for server state management. It handles caching, background updates, loading states, and error handling automatically.
+
+### Configuration
+
+The QueryClient is configured in `src/app/providers/QueryProvider.tsx`:
+
+```typescript
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,  // 5 minutes
+      gcTime: 1000 * 60 * 30,    // 30 minutes
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
+```
+
+### Query Hooks
+
+Each entity provides pre-built query hooks in `api/queries.ts`:
+
+#### Game Entity
+
+```typescript
+import { 
+  useOpenGames, 
+  useGame, 
+  useMyGame,
+  useJoinGame,
+  useLeaveGame 
+} from '@/entities/game';
+
+// Get all open games
+const { data: games, isLoading, isError } = useOpenGames();
+
+// Get single game
+const { data: game } = useGame(gameId);
+
+// Get user's active game
+const { data: myGame } = useMyGame();
+
+// Join game mutation
+const joinGame = useJoinGame();
+joinGame.mutate({ gameId: '123', role: 'player' });
+
+// Leave game mutation
+const leaveGame = useLeaveGame();
+leaveGame.mutate(gameId);
+```
+
+#### User Entity
+
+```typescript
+import { useProfile, useJudgeStats } from '@/entities/user';
+
+const { data: profile, isLoading } = useProfile();
+const { data: judgeStats } = useJudgeStats();
+```
+
+#### Stats Entity
+
+```typescript
+import { useStats } from '@/entities/stats';
+
+const { data: stats, isLoading, refetch } = useStats();
+// stats.speakers and stats.judges
+```
+
+#### Admin Entity
+
+```typescript
+import { 
+  useUsers, 
+  useCreateCompletedGame 
+} from '@/entities/admin';
+
+const { data: users, isLoading } = useUsers();
+
+const createGame = useCreateCompletedGame();
+createGame.mutate(gameData, {
+  onSuccess: () => {
+    // Handle success
+  },
+});
+```
+
+### Query Keys
+
+Query keys are organized per entity for proper cache invalidation:
+
+```typescript
+// Game keys
+gameKeys.all        // ['games']
+gameKeys.lists()    // ['games', 'list']
+gameKeys.detail(id) // ['games', 'detail', id]
+gameKeys.my()       // ['games', 'my']
+
+// User keys
+userKeys.profile()   // ['users', 'profile']
+userKeys.judgeStats() // ['users', 'judge-stats']
+
+// Stats keys
+statsKeys.lists()    // ['stats', 'list']
+
+// Admin keys
+adminKeys.users()    // ['admin', 'users']
+```
+
+### Manual Cache Invalidation
+
+After mutations, relevant queries are automatically invalidated. For manual invalidation:
+
+```typescript
+import { useQueryClient } from '@tanstack/react-query';
+import { gameKeys } from '@/entities/game';
+
+const queryClient = useQueryClient();
+
+// Invalidate all game queries
+queryClient.invalidateQueries({ queryKey: gameKeys.all });
+
+// Invalidate specific game
+queryClient.invalidateQueries({ queryKey: gameKeys.detail(gameId) });
+
+// Refetch immediately
+queryClient.refetchQueries({ queryKey: gameKeys.lists() });
+```
+
+### Usage in Components
+
+```typescript
+import React from 'react';
+import { useStats } from '@/entities/stats';
+import { Button } from '@/shared/ui';
+
+export const MyComponent: React.FC = () => {
+  const { data, isLoading, isError, refetch } = useStats();
+
+  if (isLoading) return <div>Loading...</div>;
+  if (isError) return (
+    <div>
+      Error loading data
+      <Button onClick={() => refetch()}>Retry</Button>
+    </div>
+  );
+
+  return <div>{data.speakers.length} speakers</div>;
+};
+```
+
+### Mutations with Loading States
+
+```typescript
+import { useCreateCompletedGame } from '@/entities/admin';
+
+const MyForm: React.FC = () => {
+  const mutation = useCreateCompletedGame();
+
+  const handleSubmit = (data: CreateGameData) => {
+    mutation.mutate(data, {
+      onSuccess: () => {
+        // Show success message
+      },
+      onError: (error) => {
+        // Show error message
+      },
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* form fields */}
+      <Button 
+        type="submit" 
+        loading={mutation.isPending}
+        disabled={mutation.isPending}
+      >
+        Submit
+      </Button>
+    </form>
+  );
+};
 ```
 
 ---
@@ -604,9 +799,12 @@ export { MyPage } from './my-page';
 1. Create folder in `src/entities/{entity-name}/`
 2. Add subfolders: `model/`, `api/`, `ui/` (optional)
 3. Define types in `model/types.ts`
-4. Create API methods in `api/{entity}Api.ts`
-5. Add UI components in `ui/` (if needed)
-6. Export from `src/entities/index.ts`
+4. Create constants in `model/constants.ts` (if needed)
+5. Create utilities in `model/utilities.ts` (if needed)
+6. Create API methods in `api/{entity}Api.ts`
+7. **Create query hooks in `api/queries.ts`**
+8. Add UI components in `ui/` (if needed)
+9. Export from `src/entities/index.ts`
 
 ```typescript
 // src/entities/product/model/types.ts
@@ -616,13 +814,55 @@ export interface Product {
   price: number;
 }
 
+// src/entities/product/model/constants.ts
+export const PRODUCT_CATEGORIES = [
+  { id: 'electronics', label: 'Electronics' },
+  { id: 'clothing', label: 'Clothing' },
+];
+
+// src/entities/product/model/utilities.ts
+export const formatPrice = (price: number): string => {
+  return `$${price.toFixed(2)}`;
+};
+
 // src/entities/product/api/productApi.ts
 import { apiClient } from '@/shared/api';
 import type { Product } from '../model';
 
 export const productApi = {
   getProducts: () => apiClient.get<Product[]>('/products'),
+  getProduct: (id: string) => apiClient.get<Product>(`/products/${id}`),
 };
+
+// src/entities/product/api/queries.ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { productApi } from './productApi';
+import type { Product } from '../model';
+
+export const productKeys = {
+  all: ['products'] as const,
+  lists: () => [...productKeys.all, 'list'] as const,
+  detail: (id: string) => [...productKeys.all, 'detail', id] as const,
+};
+
+export const useProducts = () => {
+  return useQuery({
+    queryKey: productKeys.lists(),
+    queryFn: () => productApi.getProducts(),
+  });
+};
+
+export const useProduct = (id: string | undefined) => {
+  return useQuery({
+    queryKey: productKeys.detail(id || ''),
+    queryFn: () => productApi.getProduct(id!),
+    enabled: !!id,
+  });
+};
+
+// src/entities/product/api/index.ts
+export { productApi } from './productApi';
+export { productKeys, useProducts, useProduct } from './queries';
 
 // src/entities/product/index.ts
 export * from './model';
@@ -676,6 +916,64 @@ export const gameApi = {
   updateGame: (id: string, data: UpdateGameDto) =>
     apiClient.patch<Game>(`/games/${id}`, data),
 };
+```
+
+### Using Entity Utilities
+
+Each entity provides utility functions in `model/utilities.ts`:
+
+```typescript
+// Using game entity utilities
+import { 
+  getRoleIcon, 
+  getPositionShort,
+  formatParticipantName 
+} from '@/entities/game';
+
+const icon = getRoleIcon('player'); // '🎤'
+const short = getPositionShort('opening_government'); // 'OG'
+
+// Using user entity utilities
+import { formatUserDisplayName } from '@/entities/user';
+
+const name = formatUserDisplayName('John', 'Doe', 'johndoe');
+// 'John Doe (@johndoe)'
+
+// Using admin entity utilities
+import { 
+  validateGameResultsForm,
+  buildCreateGameRequest 
+} from '@/entities/admin';
+
+const validation = validateGameResultsForm(gameName, motion, judgeId, positions);
+if (validation.isValid) {
+  const request = buildCreateGameRequest(gameName, motion, judgeId, positions);
+}
+```
+
+### Using Entity Constants
+
+Constants are defined in `model/constants.ts`:
+
+```typescript
+import { 
+  GAME_STATUS_CONFIG,
+  ROLE_CONFIG 
+} from '@/entities/game';
+
+// Access status display config
+const registrationConfig = GAME_STATUS_CONFIG[GameStatus.REGISTRATION];
+// { label: '📝 Registration', color: '#27ae60', bgColor: '...' }
+
+import { 
+  RESULTS_POSITION_CONFIG,
+  SCORE_CONSTRAINTS,
+  VALIDATION_MESSAGES 
+} from '@/entities/admin';
+
+// Use in forms
+const minScore = SCORE_CONSTRAINTS.min; // 0
+const maxScore = SCORE_CONSTRAINTS.max; // 100
 ```
 
 ### Using Telegram Theme
@@ -749,9 +1047,10 @@ npx tsc --noEmit
 - [Feature-Sliced Design Documentation](https://feature-sliced.design/)
 - [Telegram Mini Apps Documentation](https://core.telegram.org/bots/webapps)
 - [React Documentation](https://react.dev/)
+- [TanStack Query Documentation](https://tanstack.com/query/latest)
 
 ---
 
 *Last updated: April 2026*  
 *Mini App Version: 1.0.0*  
-*Architecture: Feature-Sliced Design (FSD)*
+*Architecture: Feature-Sliced Design (FSD) + TanStack Query*

@@ -2,18 +2,13 @@ import React, { useState } from 'react';
 import { useTelegram } from '@/shared/telegram';
 import { Button, Card } from '@/shared/ui';
 import { ParticipantRole } from '@/entities/game';
+import { ROLE_SELECTOR_OPTIONS } from '../../model/constants';
 
 interface RoleSelectorProps {
   onSelect: (role: ParticipantRole) => void;
   onJoin: () => void;
   isLoading: boolean;
 }
-
-const roles: { value: ParticipantRole; label: string; icon: string }[] = [
-  { value: ParticipantRole.PLAYER, label: 'Player', icon: '🎤' },
-  { value: ParticipantRole.JUDGE, label: 'Judge', icon: '⚖️' },
-  { value: ParticipantRole.WING, label: 'Wing', icon: '🪶' },
-];
 
 export const RoleSelector: React.FC<RoleSelectorProps> = ({
   onSelect,
@@ -41,7 +36,7 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({
         Select your role:
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {roles.map((role) => (
+        {ROLE_SELECTOR_OPTIONS.map((role) => (
           <button
             key={role.value}
             onClick={() => handleSelect(role.value)}

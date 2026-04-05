@@ -1,235 +1,111 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Layout } from '@/widgets/layout';
 import { Card, Button, SearchableSelect } from '@/shared/ui';
-import { adminApi, type UserOption, type CreateCompletedGameRequest, type PositionResult } from '@/entities/admin';
+import { useUsers, useCreateCompletedGame } from '@/entities/admin';
+import {
+  createDefaultPositionResults,
+  updatePositionIronman,
+  updatePositionSpeaker,
+  validateGameResultsForm,
+  buildCreateGameRequest,
+  RESULTS_POSITION_CONFIG,
+  VALIDATION_MESSAGES,
+  SCORE_CONSTRAINTS,
+  type PositionResultsRecord,
+} from '@/entities/admin';
+import { formatUserOptionDisplayName } from '@/entities/admin';
+import type { UserOption } from '@/entities/admin';
 import './AdminResultsPage.css';
-
-interface PositionConfig {
-  key:
-    | 'openingGovernment'
-    | 'openingOpposition'
-    | 'closingGovernment'
-    | 'closingOpposition';
-  label: string;
-  required: boolean;
-}
-
-const POSITIONS: PositionConfig[] = [
-  {
-    key: 'openingGovernment',
-    label: 'Opening Government (OG)',
-    required: true,
-  },
-  {
-    key: 'openingOpposition',
-    label: 'Opening Opposition (OO)',
-    required: true,
-  },
-  {
-    key: 'closingGovernment',
-    label: 'Closing Government (CG)',
-    required: false,
-  },
-  {
-    key: 'closingOpposition',
-    label: 'Closing Opposition (CO)',
-    required: false,
-  },
-];
 
 interface AdminResultsPageProps {
   onLogout: () => void;
 }
 
-const createDefaultPosition = (): PositionResult => ({
-  speaker1: { telegramId: null, score: 70 },
-  speaker2: { telegramId: null, score: 70 },
-  isIronman: false,
-});
-
 export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
   onLogout,
 }) => {
-  const [users, setUsers] = useState<UserOption[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-
+  // Form state
   const [gameName, setGameName] = useState('');
   const [motion, setMotion] = useState('');
   const [selectedJudgeId, setSelectedJudgeId] = useState<number | null>(null);
-  const [positionResults, setPositionResults] = useState<
-    Record<string, PositionResult>
-  >({
-    openingGovernment: createDefaultPosition(),
-    openingOpposition: createDefaultPosition(),
-    closingGovernment: createDefaultPosition(),
-    closingOpposition: createDefaultPosition(),
-  });
+  const [positionResults, setPositionResults] = useState<PositionResultsRecord>(
+    createDefaultPositionResults()
+  );
+  const [formError, setFormError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
+  // Queries and mutations
+  const { data: users = [], isLoading: isLoadingUsers } = useUsers();
+  const createGameMutation = useCreateCompletedGame();
 
-  const loadUsers = async () => {
-    try {
-      setLoading(true);
-      const usersData = await adminApi.getUsers();
-      setUsers(usersData);
-    } catch (err) {
-      setError('Ошибка загрузки данных');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleIronmanChange = (position: string, isIronman: boolean) => {
+  const handleIronmanChange = (position: keyof PositionResultsRecord, isIronman: boolean) => {
     setPositionResults((prev) => ({
       ...prev,
-      [position]: {
-        ...prev[position],
-        isIronman,
-        speaker1:
-          isIronman && prev[position].speaker1.telegramId
-            ? prev[position].speaker1
-            : prev[position].speaker1,
-      },
+      [position]: updatePositionIronman(prev[position], isIronman),
     }));
   };
 
   const handleSpeakerChange = (
-    position: string,
+    position: keyof PositionResultsRecord,
     speaker: 'speaker1' | 'speaker2',
     field: 'telegramId' | 'score',
     value: number | null,
   ) => {
-    setPositionResults((prev) => {
-      const currentPosition = prev[position];
-      const isIronman = currentPosition.isIronman;
-
-      if (isIronman && speaker === 'speaker1' && field === 'telegramId') {
-        return {
-          ...prev,
-          [position]: {
-            ...currentPosition,
-            speaker1: { ...currentPosition.speaker1, telegramId: value },
-            speaker2: { ...currentPosition.speaker2, telegramId: value },
-          },
-        };
-      }
-
-      return {
-        ...prev,
-        [position]: {
-          ...currentPosition,
-          [speaker]: {
-            ...currentPosition[speaker],
-            [field]: value,
-          },
-        },
-      };
-    });
+    setPositionResults((prev) => ({
+      ...prev,
+      [position]: updatePositionSpeaker(prev[position], speaker, field, value),
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+    setSuccess(false);
 
-    if (!gameName.trim()) {
-      setError('Введите название игры');
+    const validation = validateGameResultsForm(
+      gameName,
+      motion,
+      selectedJudgeId,
+      positionResults
+    );
+
+    if (!validation.isValid) {
+      setFormError(validation.error);
       return;
     }
 
-    if (!motion.trim()) {
-      setError('Введите тему');
-      return;
-    }
+    const data = buildCreateGameRequest(
+      gameName,
+      motion,
+      selectedJudgeId!,
+      positionResults
+    );
 
-    if (selectedJudgeId === null) {
-      setError('Выберите судью');
-      return;
-    }
-
-    const og = positionResults.openingGovernment;
-    const oo = positionResults.openingOpposition;
-
-    if (!og.speaker1.telegramId || (!og.isIronman && !og.speaker2.telegramId)) {
-      setError('Выберите обоих спикеров для Opening Government');
-      return;
-    }
-
-    if (!oo.speaker1.telegramId || (!oo.isIronman && !oo.speaker2.telegramId)) {
-      setError('Выберите обоих спикеров для Opening Opposition');
-      return;
-    }
-
-    const data: CreateCompletedGameRequest = {
-      gameName: gameName.trim(),
-      motion: motion.trim(),
-      openingGovernment: og,
-      openingOpposition: oo,
-      judgeTelegramId: selectedJudgeId,
-    };
-
-    if (
-      positionResults.closingGovernment.speaker1.telegramId &&
-      (positionResults.closingGovernment.isIronman ||
-        positionResults.closingGovernment.speaker2.telegramId)
-    ) {
-      data.closingGovernment = positionResults.closingGovernment;
-    }
-
-    if (
-      positionResults.closingOpposition.speaker1.telegramId &&
-      (positionResults.closingOpposition.isIronman ||
-        positionResults.closingOpposition.speaker2.telegramId)
-    ) {
-      data.closingOpposition = positionResults.closingOpposition;
-    }
-
-    setSubmitting(true);
-    setError(null);
-
-    try {
-      await adminApi.createCompletedGame(data);
-      setSuccess(true);
-      setGameName('');
-      setMotion('');
-      setSelectedJudgeId(null);
-      setPositionResults({
-        openingGovernment: createDefaultPosition(),
-        openingOpposition: createDefaultPosition(),
-        closingGovernment: createDefaultPosition(),
-        closingOpposition: createDefaultPosition(),
-      });
-    } catch (err) {
-      setError('Ошибка сохранения результатов');
-      console.error(err);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const getUserDisplayName = (user: UserOption) => {
-    let name = user.firstName;
-    if (user.lastName) {
-      name += ` ${user.lastName}`;
-    }
-    if (user.username) {
-      name += ` (@${user.username})`;
-    }
-    return name;
+    createGameMutation.mutate(data, {
+      onSuccess: () => {
+        setSuccess(true);
+        // Reset form
+        setGameName('');
+        setMotion('');
+        setSelectedJudgeId(null);
+        setPositionResults(createDefaultPositionResults());
+      },
+      onError: () => {
+        setFormError(VALIDATION_MESSAGES.SAVE_ERROR);
+      },
+    });
   };
 
   const userOptions = useMemo(() => {
-    return users.map((user) => ({
+    return users.map((user: UserOption) => ({
       value: user.telegramId,
-      label: getUserDisplayName(user),
+      label: formatUserOptionDisplayName(user),
     }));
   }, [users]);
 
-  if (loading) {
+  const isSubmitting = createGameMutation.isPending;
+
+  if (isLoadingUsers) {
     return (
       <Layout
         header={<h1 className="page-title">Создание игры с результатами</h1>}
@@ -255,11 +131,11 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
       <div className="results-container">
         {success && (
           <div className="success-message">
-            Игра с результатами успешно создана!
+            {VALIDATION_MESSAGES.SAVE_SUCCESS}
           </div>
         )}
 
-        {error && <div className="error-message">{error}</div>}
+        {formError && <div className="error-message">{formError}</div>}
 
         <form onSubmit={handleSubmit} className="results-form">
           <Card>
@@ -272,6 +148,7 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
                 onChange={(e) => setGameName(e.target.value)}
                 className="form-input"
                 placeholder="Введите название игры"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -283,6 +160,7 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
                 onChange={(e) => setMotion(e.target.value)}
                 className="form-input"
                 placeholder="Введите тему дебатов"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -293,6 +171,7 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
                 onChange={(value) => setSelectedJudgeId(value as number | null)}
                 options={userOptions}
                 placeholder="Выберите судью"
+                disabled={isSubmitting}
               />
             </div>
           </Card>
@@ -300,7 +179,7 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
           <Card>
             <h2 className="section-title">Позиции и оценки</h2>
 
-            {POSITIONS.map((pos) => {
+            {RESULTS_POSITION_CONFIG.map((pos) => {
               const positionData = positionResults[pos.key];
               const isIronman = positionData.isIronman;
 
@@ -321,6 +200,7 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
                           handleIronmanChange(pos.key, e.target.checked)
                         }
                         className="checkbox-input"
+                        disabled={isSubmitting}
                       />
                       <span className="checkbox-text">Ironman</span>
                     </label>
@@ -344,14 +224,15 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
                         options={userOptions}
                         placeholder={pos.required ? 'Выберите спикера' : 'Не выбрано'}
                         className="speaker-select"
+                        disabled={isSubmitting}
                       />
 
                       {isIronman ? (
                         <>
                           <input
                             type="number"
-                            min="0"
-                            max="100"
+                            min={SCORE_CONSTRAINTS.min}
+                            max={SCORE_CONSTRAINTS.max}
                             value={positionData.speaker1.score}
                             onChange={(e) =>
                               handleSpeakerChange(
@@ -363,11 +244,12 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
                             }
                             className="form-input score-input"
                             placeholder="Балл 1"
+                            disabled={isSubmitting}
                           />
                           <input
                             type="number"
-                            min="0"
-                            max="100"
+                            min={SCORE_CONSTRAINTS.min}
+                            max={SCORE_CONSTRAINTS.max}
                             value={positionData.speaker2.score}
                             onChange={(e) =>
                               handleSpeakerChange(
@@ -379,13 +261,14 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
                             }
                             className="form-input score-input"
                             placeholder="Балл 2"
+                            disabled={isSubmitting}
                           />
                         </>
                       ) : (
                         <input
                           type="number"
-                          min="0"
-                          max="100"
+                          min={SCORE_CONSTRAINTS.min}
+                          max={SCORE_CONSTRAINTS.max}
                           value={positionData.speaker1.score}
                           onChange={(e) =>
                             handleSpeakerChange(
@@ -397,6 +280,7 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
                           }
                           className="form-input score-input"
                           placeholder="Балл"
+                          disabled={isSubmitting}
                         />
                       )}
                     </div>
@@ -417,24 +301,25 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
                             )
                           }
                           className="form-select speaker-select"
+                          disabled={isSubmitting}
                         >
                           <option value="">
                             {pos.required ? 'Выберите спикера' : 'Не выбрано'}
                           </option>
-                          {users.map((user) => (
+                          {users.map((user: UserOption) => (
                             <option
                               key={user.telegramId}
                               value={user.telegramId}
                             >
-                              {getUserDisplayName(user)}
+                              {formatUserOptionDisplayName(user)}
                             </option>
                           ))}
                         </select>
 
                         <input
                           type="number"
-                          min="0"
-                          max="100"
+                          min={SCORE_CONSTRAINTS.min}
+                          max={SCORE_CONSTRAINTS.max}
                           value={positionData.speaker2.score}
                           onChange={(e) =>
                             handleSpeakerChange(
@@ -446,6 +331,7 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
                           }
                           className="form-input score-input"
                           placeholder="Балл"
+                          disabled={isSubmitting}
                         />
                       </div>
                     </div>
@@ -458,8 +344,8 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
           <Button
             type="submit"
             fullWidth
-            loading={submitting}
-            disabled={submitting}
+            loading={isSubmitting}
+            disabled={isSubmitting}
             size="lg"
           >
             Создать игру с результатами

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Layout } from '@/widgets/layout';
 import { Card, Button } from '@/shared/ui';
-import { adminAuthApi } from '@/features/admin-auth';
+import { useAdminLogin } from '@/features/admin-auth';
 import './AdminLoginPage.css';
 
 interface AdminLoginPageProps {
@@ -11,7 +11,8 @@ interface AdminLoginPageProps {
 export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  const loginMutation = useAdminLogin();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,17 +22,16 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onLogin }) => {
       return;
     }
 
-    setLoading(true);
     setError(null);
 
-    try {
-      await adminAuthApi.login(password);
-      onLogin();
-    } catch (err) {
-      setError('Неверный пароль');
-    } finally {
-      setLoading(false);
-    }
+    loginMutation.mutate(password, {
+      onSuccess: () => {
+        onLogin();
+      },
+      onError: () => {
+        setError('Неверный пароль');
+      },
+    });
   };
 
   return (
@@ -50,7 +50,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onLogin }) => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="form-input"
                 placeholder="Введите пароль"
-                disabled={loading}
+                disabled={loginMutation.isPending}
               />
             </div>
 
@@ -59,8 +59,8 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onLogin }) => {
             <Button
               type="submit"
               fullWidth
-              loading={loading}
-              disabled={loading}
+              loading={loginMutation.isPending}
+              disabled={loginMutation.isPending}
             >
               Войти
             </Button>

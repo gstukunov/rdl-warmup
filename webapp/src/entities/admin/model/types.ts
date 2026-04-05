@@ -28,6 +28,16 @@ export interface PositionResult {
   isIronman: boolean;
 }
 
+export interface PositionConfig {
+  key:
+    | 'openingGovernment'
+    | 'openingOpposition'
+    | 'closingGovernment'
+    | 'closingOpposition';
+  label: string;
+  required: boolean;
+}
+
 export interface SubmitGameResultsRequest {
   gameId: string;
   motion: string;
@@ -46,4 +56,18 @@ export interface CreateCompletedGameRequest {
   closingGovernment?: PositionResult;
   closingOpposition?: PositionResult;
   judgeTelegramId: number;
+}
+
+// Form validation result
+export interface ValidationResult {
+  isValid: boolean;
+  error: string | null;
+}
+
+// Position results record
+export interface PositionResultsRecord {
+  openingGovernment: PositionResult;
+  openingOpposition: PositionResult;
+  closingGovernment: PositionResult;
+  closingOpposition: PositionResult;
 }

@@ -6,8 +6,7 @@ import type {
   SubmitGameResultsRequest,
   CreateCompletedGameRequest,
 } from '../model';
-
-const ADMIN_TOKEN_KEY = 'admin_token';
+import { ADMIN_TOKEN_KEY } from '../model/constants';
 
 export const adminApi = {
   // Store admin token

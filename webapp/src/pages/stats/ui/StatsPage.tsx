@@ -1,42 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { statsApi, type SpeakerStat, type JudgeStat } from '@/entities/stats';
+import React, { useState } from 'react';
+import { useStats } from '@/entities/stats';
 import './StatsPage.css';
 
 export const StatsPage: React.FC = () => {
-  console.log('[StatsPage] Rendering');
-
-  const [speakers, setSpeakers] = useState<SpeakerStat[]>([]);
-  const [judges, setJudges] = useState<JudgeStat[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'speakers' | 'judges'>('speakers');
+  
+  const { data, isLoading, isError, refetch } = useStats();
 
-  useEffect(() => {
-    console.log('[StatsPage] useEffect running');
+  const speakers = data?.speakers ?? [];
+  const judges = data?.judges ?? [];
 
-    const loadStats = async () => {
-      try {
-        console.log('[StatsPage] Loading stats...');
-        setLoading(true);
-        setError(null);
-
-        const data = await statsApi.getStats();
-        console.log('[StatsPage] Stats loaded:', data);
-
-        setSpeakers(data.speakers || []);
-        setJudges(data.judges || []);
-      } catch (err) {
-        console.error('[StatsPage] Error loading stats:', err);
-        setError('Failed to load statistics. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadStats();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="stats-page">
         <div className="loading-container">
@@ -46,13 +20,13 @@ export const StatsPage: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <div className="stats-page">
         <div className="error-container">
-          <div className="error">{error}</div>
-          <button onClick={() => window.location.reload()} className="retry-button">
-            Обновить страницу
+          <div className="error">Failed to load statistics. Please try again later.</div>
+          <button onClick={() => refetch()} className="retry-button">
+            Попробовать снова
           </button>
         </div>
       </div>
