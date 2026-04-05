@@ -100,9 +100,10 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
         ...prev[position],
         isIronman,
         // When switching to ironman, sync speaker2 to speaker1 if speaker1 is selected
-        speaker1: isIronman && prev[position].speaker1.telegramId
-          ? prev[position].speaker1
-          : prev[position].speaker1,
+        speaker1:
+          isIronman && prev[position].speaker1.telegramId
+            ? prev[position].speaker1
+            : prev[position].speaker1,
       },
     }));
   };
@@ -151,7 +152,7 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
     }
 
     if (!motion.trim()) {
-      setError('Введите моцию');
+      setError('Введите тему');
       return;
     }
 
@@ -236,7 +237,9 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
 
   if (loading) {
     return (
-      <Layout header={<h1 className="page-title">Создание игры с результатами</h1>}>
+      <Layout
+        header={<h1 className="page-title">Создание игры с результатами</h1>}
+      >
         <div className="loading-container">
           <div className="loading">Загрузка...</div>
         </div>
@@ -257,7 +260,9 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
     >
       <div className="results-container">
         {success && (
-          <div className="success-message">Игра с результатами успешно создана!</div>
+          <div className="success-message">
+            Игра с результатами успешно создана!
+          </div>
         )}
 
         {error && <div className="error-message">{error}</div>}
@@ -278,7 +283,7 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Моция</label>
+              <label className="form-label">Тема</label>
               <input
                 type="text"
                 value={motion}
@@ -442,7 +447,10 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
                             {pos.required ? 'Выберите спикера' : 'Не выбрано'}
                           </option>
                           {users.map((user) => (
-                            <option key={user.telegramId} value={user.telegramId}>
+                            <option
+                              key={user.telegramId}
+                              value={user.telegramId}
+                            >
                               {getUserDisplayName(user)}
                             </option>
                           ))}
