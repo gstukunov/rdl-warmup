@@ -225,14 +225,7 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
     }
   };
 
-  // Memoize user options for searchable selects
-  const userOptions = useMemo(() => {
-    return users.map((user) => ({
-      value: user.telegramId,
-      label: getUserDisplayName(user),
-    }));
-  }, [users]);
-
+  // Helper function to get user display name
   const getUserDisplayName = (user: UserOption) => {
     let name = user.firstName;
     if (user.lastName) {
@@ -243,6 +236,14 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
     }
     return name;
   };
+
+  // Memoize user options for searchable selects
+  const userOptions = useMemo(() => {
+    return users.map((user) => ({
+      value: user.telegramId,
+      label: getUserDisplayName(user),
+    }));
+  }, [users]);
 
   if (loading) {
     return (
