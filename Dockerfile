@@ -3,18 +3,23 @@ FROM node:20-alpine AS builder
 
 WORKDIR /usr/src/app
 
-# Copy package files
+# Copy root package files
 COPY package*.json ./
 
-# Install dependencies
+# Copy webapp package files
+COPY webapp/package*.json ./webapp/
+
+# Install root dependencies
 RUN npm ci
+
+# Install webapp dependencies
+RUN cd webapp && npm ci
 
 # Copy source code (including webapp)
 COPY . .
 
-# Build webapp and server
-# Note: webapp:build installs its own dependencies and builds
-RUN npm run webapp:build
+# Build webapp
+RUN cd webapp && npm run build:prod
 
 # Build the NestJS server
 RUN npm run build:server
