@@ -17,6 +17,7 @@ import type {
   CompletedGameListItemDto,
   GameDetailsDto,
   SubmitGameResultsRequestDto,
+  CreateCompletedGameRequestDto,
 } from './dtos/webapp.dto';
 
 @Controller('api/admin')
@@ -76,6 +77,19 @@ export class AdminController {
     await this.webAppService.submitGameResults(body);
     return {
       success: true,
+    };
+  }
+
+  @Post('games/completed')
+  @UseGuards(AdminAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async createCompletedGame(
+    @Body() body: CreateCompletedGameRequestDto,
+  ): Promise<ApiResponse<{ gameId: string }>> {
+    const gameId = await this.webAppService.createCompletedGame(body);
+    return {
+      success: true,
+      data: { gameId },
     };
   }
 }

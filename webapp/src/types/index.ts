@@ -166,6 +166,16 @@ export interface SubmitGameResultsRequest {
   judgeTelegramId: number;
 }
 
+export interface CreateCompletedGameRequest {
+  gameName: string;
+  motion: string;
+  openingGovernment: PositionResult;
+  openingOpposition: PositionResult;
+  closingGovernment?: PositionResult;
+  closingOpposition?: PositionResult;
+  judgeTelegramId: number;
+}
+
 // Stats types
 export interface SpeakerStat {
   telegramId: number;

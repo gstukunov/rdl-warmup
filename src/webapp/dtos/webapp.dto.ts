@@ -133,6 +133,16 @@ export interface SubmitGameResultsRequestDto {
   judgeTelegramId: number;
 }
 
+export interface CreateCompletedGameRequestDto {
+  gameName: string;
+  motion: string;
+  openingGovernment: PositionResultDto;
+  openingOpposition: PositionResultDto;
+  closingGovernment?: PositionResultDto;
+  closingOpposition?: PositionResultDto;
+  judgeTelegramId: number;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;

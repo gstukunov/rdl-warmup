@@ -5,8 +5,7 @@ import { Button } from '../components/Button';
 import { adminApi } from '../api/admin';
 import type {
   UserOption,
-  CompletedGame,
-  SubmitGameResultsRequest,
+  CreateCompletedGameRequest,
   PositionResult,
 } from '../types';
 import './GameResultsPage.css';
@@ -52,7 +51,6 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
   onLogout,
 }) => {
   // Data state
-  const [games, setGames] = useState<CompletedGame[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +58,7 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
   const [success, setSuccess] = useState(false);
 
   // Form state
-  const [selectedGameId, setSelectedGameId] = useState<string>('');
+  const [gameName, setGameName] = useState('');
   const [motion, setMotion] = useState('');
   const [selectedJudgeId, setSelectedJudgeId] = useState<string>('');
   const [positionResults, setPositionResults] = useState<
@@ -73,17 +71,13 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
   });
 
   useEffect(() => {
-    loadData();
+    loadUsers();
   }, []);
 
-  const loadData = async () => {
+  const loadUsers = async () => {
     try {
       setLoading(true);
-      const [gamesData, usersData] = await Promise.all([
-        adminApi.getCompletedGames(),
-        adminApi.getUsers(),
-      ]);
-      setGames(gamesData);
+      const usersData = await adminApi.getUsers();
       setUsers(usersData);
     } catch (err) {
       setError('Ошибка загрузки данных');
@@ -110,8 +104,8 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedGameId) {
-      setError('Выберите игру');
+    if (!gameName.trim()) {
+      setError('Введите название игры');
       return;
     }
 
@@ -139,8 +133,8 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
       return;
     }
 
-    const data: SubmitGameResultsRequest = {
-      gameId: selectedGameId,
+    const data: CreateCompletedGameRequest = {
+      gameName: gameName.trim(),
       motion: motion.trim(),
       openingGovernment: og,
       openingOpposition: oo,
@@ -160,10 +154,10 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
     setError(null);
 
     try {
-      await adminApi.submitGameResults(data);
+      await adminApi.createCompletedGame(data);
       setSuccess(true);
       // Reset form
-      setSelectedGameId('');
+      setGameName('');
       setMotion('');
       setSelectedJudgeId('');
       setPositionResults({
@@ -172,8 +166,6 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
         closingGovernment: { telegramId: null, isIronman: false, score: 70 },
         closingOpposition: { telegramId: null, isIronman: false, score: 70 },
       });
-      // Refresh games list
-      loadData();
     } catch (err) {
       setError('Ошибка сохранения результатов');
       console.error(err);
@@ -195,7 +187,7 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
 
   if (loading) {
     return (
-      <Layout header={<h1 className="page-title">Внесение результатов</h1>}>
+      <Layout header={<h1 className="page-title">Создание игры с результатами</h1>}>
         <div className="loading-container">
           <div className="loading">Загрузка...</div>
         </div>
@@ -207,7 +199,7 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
     <Layout
       header={
         <div className="page-header">
-          <h1 className="page-title">Внесение результатов</h1>
+          <h1 className="page-title">Создание игры с результатами</h1>
           <Button onClick={onLogout} variant="secondary" size="sm">
             Выйти
           </Button>
@@ -216,39 +208,28 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
     >
       <div className="results-container">
         {success && (
-          <div className="success-message">Результаты успешно сохранены!</div>
+          <div className="success-message">Игра с результатами успешно создана!</div>
         )}
 
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="results-form">
-          {/* Game Selection */}
+          {/* Game Info */}
           <Card>
-            <h2 className="section-title">Выбор игры</h2>
+            <h2 className="section-title">Информация об игре</h2>
             <div className="form-group">
-              <label className="form-label">Игра</label>
-              <select
-                value={selectedGameId}
-                onChange={(e) => {
-                  setSelectedGameId(e.target.value);
-                  const game = games.find((g) => g.id === e.target.value);
-                  if (game?.motion) {
-                    setMotion(game.motion);
-                  }
-                }}
-                className="form-select"
-              >
-                <option value="">Выберите игру</option>
-                {games.map((game) => (
-                  <option key={game.id} value={game.id}>
-                    {game.name} {game.hasResults ? '(✓ результаты)' : ''}
-                  </option>
-                ))}
-              </select>
+              <label className="form-label">Название игры</label>
+              <input
+                type="text"
+                value={gameName}
+                onChange={(e) => setGameName(e.target.value)}
+                className="form-input"
+                placeholder="Введите название игры"
+              />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Тема</label>
+              <label className="form-label">Моция</label>
               <input
                 type="text"
                 value={motion}
@@ -360,7 +341,7 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
             disabled={submitting}
             size="lg"
           >
-            Сохранить результаты
+            Создать игру с результатами
           </Button>
         </form>
       </div>

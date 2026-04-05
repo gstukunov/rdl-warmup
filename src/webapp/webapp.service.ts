@@ -31,6 +31,7 @@ import type {
   UserOptionDto,
   CompletedGameListItemDto,
   SubmitGameResultsRequestDto,
+  CreateCompletedGameRequestDto,
 } from './dtos/webapp.dto';
 
 interface SpeakerStat {
@@ -619,6 +620,91 @@ export class WebAppService {
     game.status = GameStatus.COMPLETED;
     game.endTime = new Date();
     await this.gameRepository.save(game);
+  }
+
+  async createCompletedGame(data: CreateCompletedGameRequestDto): Promise<string> {
+    // Create a new game with COMPLETED status
+    const game = this.gameRepository.create({
+      name: data.gameName,
+      description: null,
+      motion: data.motion,
+      status: GameStatus.COMPLETED,
+      maxParticipants: 8,
+      isAllocated: true,
+      startTime: new Date(),
+      endTime: new Date(),
+      gamePassword: null,
+      createdByTelegramId: null,
+      totalRounds: 1,
+      currentRound: 1,
+      isFeedbackHidden: false,
+      settings: {},
+    });
+
+    await this.gameRepository.save(game);
+
+    const scores: SpeakerScore[] = [];
+
+    // Helper function to create score
+    const createScore = (
+      telegramId: number | null,
+      position: string,
+      scoreValue: number,
+      isIronman: boolean,
+    ) => {
+      if (!telegramId) return;
+      
+      const score = this.speakerScoreRepository.create({
+        gameId: game.id,
+        telegramId,
+        position,
+        score: scoreValue,
+        isIronman,
+        judgeTelegramId: data.judgeTelegramId,
+        submittedAt: new Date(),
+      });
+      scores.push(score);
+    };
+
+    // Add scores for each position
+    createScore(
+      data.openingGovernment.telegramId,
+      'opening_government',
+      data.openingGovernment.score,
+      data.openingGovernment.isIronman,
+    );
+
+    createScore(
+      data.openingOpposition.telegramId,
+      'opening_opposition',
+      data.openingOpposition.score,
+      data.openingOpposition.isIronman,
+    );
+
+    if (data.closingGovernment?.telegramId) {
+      createScore(
+        data.closingGovernment.telegramId,
+        'closing_government',
+        data.closingGovernment.score,
+        data.closingGovernment.isIronman,
+      );
+    }
+
+    if (data.closingOpposition?.telegramId) {
+      createScore(
+        data.closingOpposition.telegramId,
+        'closing_opposition',
+        data.closingOpposition.score,
+        data.closingOpposition.isIronman,
+      );
+    }
+
+    // Save all scores
+    if (scores.length > 0) {
+      await this.speakerScoreRepository.save(scores);
+    }
+
+    return game.id;
   }
 
   private mapGameToDetailsDto(game: Game, telegramId: number): GameDetailsDto {

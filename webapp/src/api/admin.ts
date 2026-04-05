@@ -4,6 +4,7 @@ import type {
   CompletedGame, 
   SubmitGameResultsRequest,
   GameDetails,
+  CreateCompletedGameRequest,
 } from '../types';
 
 const ADMIN_TOKEN_KEY = 'admin_token';
@@ -70,6 +71,16 @@ export const adminApi = {
   submitGameResults: async (data: SubmitGameResultsRequest): Promise<void> => {
     const token = adminApi.getToken();
     return apiClient.post<void>('/admin/games/results', data, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  },
+
+  // Create a new completed game with results
+  createCompletedGame: async (data: CreateCompletedGameRequest): Promise<{ gameId: string }> => {
+    const token = adminApi.getToken();
+    return apiClient.post<{ gameId: string }>('/admin/games/completed', data, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
