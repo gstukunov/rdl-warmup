@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Layout } from '@/widgets/layout';
 import { Card, CardContent } from '@/shared/ui/card';
-import { Button, Input, Label } from '@/shared/ui';
+import { Button, Input, Label, ThemeToggle } from '@/shared/ui';
 import { SearchableSelect } from '@/shared/ui/SearchableSelect';
 import { useUsers, useCreateCompletedGame } from '@/entities/admin';
 import {
@@ -121,11 +121,14 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
   return (
     <Layout
       header={
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h1 className="text-lg font-semibold">Создание игры с результатами</h1>
-          <Button onClick={onLogout} variant="secondary" size="sm">
-            Выйти
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button onClick={onLogout} variant="secondary" size="sm">
+              Выйти
+            </Button>
+          </div>
         </div>
       }
     >

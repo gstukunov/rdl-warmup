@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Layout } from '@/widgets/layout';
 import { Card, CardContent } from '@/shared/ui/card';
-import { Button, Input, Label } from '@/shared/ui';
+import { Button, Input, Label, ThemeToggle } from '@/shared/ui';
 import { useAdminLogin } from '@/features/admin-auth';
 
 interface AdminLoginPageProps {
@@ -36,7 +36,12 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onLogin }) => {
 
   return (
     <Layout 
-      header={<h1 className="text-lg font-semibold">Вход в панель админа</h1>}
+      header={
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold">Вход в панель админа</h1>
+          <ThemeToggle />
+        </div>
+      }
       className="bg-telegram-bg"
     >
       <div className="flex items-center justify-center min-h-[50vh] p-4">
