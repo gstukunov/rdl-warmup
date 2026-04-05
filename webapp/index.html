@@ -61,6 +61,28 @@
         text-align: center;
       }
 
+      /* Error display */
+      #error-display {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: none;
+        padding: 20px;
+        background: var(--tg-theme-bg-color, #ffffff);
+        color: #e74c3c;
+        z-index: 10000;
+        overflow: auto;
+        white-space: pre-wrap;
+        font-family: monospace;
+        font-size: 12px;
+      }
+
+      #error-display.visible {
+        display: block;
+      }
+
       /* No script message */
       noscript {
         display: block;
@@ -85,28 +107,72 @@
     
     <div id="root"></div>
     
+    <div id="error-display"></div>
+    
     <script>
-      // Hide loading indicator when app starts
-      window.addEventListener('load', function() {
-        setTimeout(function() {
-          var loader = document.getElementById('initial-loading');
-          if (loader) {
-            loader.classList.add('hidden');
-          }
-        }, 500);
-      });
-      
-      // Error handling
-      window.onerror = function(msg, url, line) {
-        console.error('[PAGE ERROR]', msg, 'at', url, line);
+      // Capture errors and show them
+      window.onerror = function(msg, url, line, col, error) {
+        console.error('[PAGE ERROR]', msg, 'at', url, line, col, error);
+        var errorDiv = document.getElementById('error-display');
         var loader = document.getElementById('initial-loading');
+        if (errorDiv) {
+          errorDiv.textContent += 'ERROR: ' + msg + '\n at ' + url + ':' + line + '\n\n';
+          errorDiv.classList.add('visible');
+        }
         if (loader) {
-          loader.innerHTML = '<div style="padding: 20px; color: #e74c3c;">Error loading app. Check console.</div>';
+          loader.classList.add('hidden');
         }
         return false;
       };
+      
+      window.addEventListener('error', function(event) {
+        console.error('[ERROR EVENT]', event.error);
+      });
+      
+      window.addEventListener('unhandledrejection', function(event) {
+        console.error('[UNHANDLED REJECTION]', event.reason);
+        var errorDiv = document.getElementById('error-display');
+        if (errorDiv) {
+          errorDiv.textContent += 'PROMISE REJECTION: ' + (event.reason && event.reason.message || event.reason) + '\n\n';
+          errorDiv.classList.add('visible');
+        }
+      });
+      
+      // Timeout to detect if app doesn't load
+      setTimeout(function() {
+        var root = document.getElementById('root');
+        var loader = document.getElementById('initial-loading');
+        if (loader && !loader.classList.contains('hidden') && root && root.children.length === 0) {
+          console.error('[TIMEOUT] App failed to load within 10 seconds');
+          var errorDiv = document.getElementById('error-display');
+          if (errorDiv) {
+            errorDiv.textContent = 'ERROR: App failed to load within 10 seconds.\nCheck console for details.';
+            errorDiv.classList.add('visible');
+          }
+          loader.classList.add('hidden');
+        }
+      }, 10000);
     </script>
     
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Fallback if module script fails to load
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          if (!window.__APP_LOADED__) {
+            console.error('[FALLBACK] App script did not load correctly');
+            var errorDiv = document.getElementById('error-display');
+            var loader = document.getElementById('initial-loading');
+            if (errorDiv) {
+              errorDiv.textContent = 'ERROR: Failed to load app script.\nMake sure you are running this through a web server, not opening the file directly.\n\nTry: npm run webapp:dev';
+              errorDiv.classList.add('visible');
+            }
+            if (loader) {
+              loader.classList.add('hidden');
+            }
+          }
+        }, 5000);
+      });
+    </script>
   </body>
 </html>

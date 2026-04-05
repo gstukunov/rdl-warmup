@@ -1,6 +1,8 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+console.log('[QUERY PROVIDER] Initializing...');
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -16,11 +18,15 @@ const queryClient = new QueryClient({
   },
 });
 
+console.log('[QUERY PROVIDER] QueryClient created');
+
 interface QueryProviderProps {
   children: React.ReactNode;
 }
 
 export const QueryProvider: React.FC<QueryProviderProps> = ({ children }) => {
+  console.log('[QUERY PROVIDER] Rendering...');
+  
   return (
     <QueryClientProvider client={queryClient}>
       {children}
