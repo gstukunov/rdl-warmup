@@ -1,18 +1,16 @@
-// shadcn/ui components
+// shadcn/ui components (from folders)
+export * from './badge';
 export * from './button';
 export * from './card';
+export * from './dialog';
 export * from './input';
 export * from './label';
-export * from './badge';
-export * from './skeleton';
-export * from './separator';
 export * from './select';
-export * from './dialog';
+export * from './separator';
+export * from './skeleton';
 export * from './tabs';
 export * from './toast';
-export { ThemeToggle } from './theme-toggle';
+export * from './theme-toggle';
 
-// Legacy wrapped components (backward compatibility)
-export { Button } from './Button/Button';
-export { Card } from './Card/Card';
-export { SearchableSelect } from './SearchableSelect/SearchableSelect';
+// Legacy components
+export { SearchableSelect } from './SearchableSelect';

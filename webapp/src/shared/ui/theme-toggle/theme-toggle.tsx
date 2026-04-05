@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useTheme } from '@/shared/theme';
-import { Button } from './button';
+import { Button } from '../button';
 import { cn } from '@/shared/lib';
 
 interface ThemeToggleProps {

@@ -1,44 +1,49 @@
-import React from 'react';
-import { Card as ShadcnCard, CardContent } from '@/shared/ui/card';
-import { useTelegram } from '@/shared/telegram';
+import * as React from 'react';
 import { cn } from '@/shared/lib';
 
-interface CardProps {
-  children: React.ReactNode;
-  onClick?: () => void;
-  padding?: boolean;
-  style?: React.CSSProperties;
-  className?: string;
-}
+const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      'rounded-xl border border-transparent bg-telegram-secondary-bg text-telegram-text shadow-sm',
+      className
+    )}
+    {...props}
+  />
+));
+Card.displayName = 'Card';
 
-export const Card: React.FC<CardProps> = ({
-  children,
-  onClick,
-  padding = true,
-  style: customStyle,
-  className,
-}) => {
-  const { impactOccurred } = useTelegram();
+const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn('flex flex-col space-y-1.5 p-4', className)} {...props} />
+  )
+);
+CardHeader.displayName = 'CardHeader';
 
-  const handleClick = () => {
-    if (onClick) {
-      impactOccurred('light');
-      onClick();
-    }
-  };
+const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
+  ({ className, ...props }, ref) => (
+    <h3 ref={ref} className={cn('font-semibold leading-none tracking-tight', className)} {...props} />
+  )
+);
+CardTitle.displayName = 'CardTitle';
 
-  return (
-    <ShadcnCard
-      onClick={onClick ? handleClick : undefined}
-      className={cn(
-        'transition-all duration-100',
-        onClick && 'cursor-pointer active:scale-[0.98] active:opacity-90',
-        !padding && '[&>div]:p-0',
-        className
-      )}
-      style={customStyle}
-    >
-      <CardContent className={cn(!padding && 'p-0')}>{children}</CardContent>
-    </ShadcnCard>
-  );
-};
+const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
+  ({ className, ...props }, ref) => (
+    <p ref={ref} className={cn('text-sm text-telegram-hint', className)} {...props} />
+  )
+);
+CardDescription.displayName = 'CardDescription';
+
+const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => <div ref={ref} className={cn('p-4 pt-0', className)} {...props} />
+);
+CardContent.displayName = 'CardContent';
+
+const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn('flex items-center p-4 pt-0', className)} {...props} />
+  )
+);
+CardFooter.displayName = 'CardFooter';
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };

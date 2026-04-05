@@ -1,1 +1,1 @@
-export { SearchableSelect } from './SearchableSelect';
+export { SearchableSelect } from './searchable-select';
