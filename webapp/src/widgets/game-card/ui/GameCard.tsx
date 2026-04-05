@@ -13,8 +13,8 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
     <Card 
       onClick={onClick}
       className={cn(
-        'cursor-pointer transition-all duration-100 active:scale-[0.98]',
-        onClick && 'hover:opacity-90'
+        'cursor-pointer transition-opacity duration-100',
+        onClick && 'hover:opacity-90 active:scale-[0.98]'
       )}
     >
       <CardContent className="p-4">

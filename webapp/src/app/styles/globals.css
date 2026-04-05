@@ -87,6 +87,16 @@ input, textarea {
   border-radius: 3px;
 }
 
+/* Fix for ResizeObserver loop error - prevent layout thrashing */
+[data-radix-popper-content-wrapper] {
+  contain: layout style;
+}
+
+/* Smooth transitions for select dropdowns */
+[role="listbox"] {
+  will-change: transform, opacity;
+}
+
 /* Animation utilities */
 @keyframes fadeIn {
   from { opacity: 0; }

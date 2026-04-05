@@ -76,7 +76,13 @@ export const StatsPage: React.FC = () => {
                   <tbody>
                     {speakers.map((speaker, index) => (
                       <tr key={speaker.telegramId} className="border-b border-telegram-secondary-bg/50 last:border-0">
-                        <td className="py-3 px-2 text-sm font-medium text-telegram-hint">{index + 1}</td>
+                        <td className={cn(
+                          "py-3 px-2 text-sm font-bold",
+                          index === 0 ? "text-yellow-500" :
+                          index === 1 ? "text-gray-400" :
+                          index === 2 ? "text-amber-600" :
+                          "text-telegram-hint"
+                        )}>{index + 1}</td>
                         <td className="py-3 px-2">
                           <div className="font-medium text-telegram-text">
                             {speaker.firstName} {speaker.lastName}
@@ -86,11 +92,7 @@ export const StatsPage: React.FC = () => {
                           )}
                         </td>
                         <td className="py-3 px-2 text-center text-sm text-telegram-text">{speaker.gamesPlayed}</td>
-                        <td className={cn(
-                          "py-3 px-2 text-center text-sm font-semibold",
-                          speaker.averageScore >= 75 ? "text-green-500" : 
-                          speaker.averageScore >= 70 ? "text-yellow-500" : "text-telegram-text"
-                        )}>
+                        <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text">
                           {speaker.averageScore}
                         </td>
                       </tr>
@@ -121,7 +123,13 @@ export const StatsPage: React.FC = () => {
                   <tbody>
                     {judges.map((judge, index) => (
                       <tr key={judge.telegramId} className="border-b border-telegram-secondary-bg/50 last:border-0">
-                        <td className="py-3 px-2 text-sm font-medium text-telegram-hint">{index + 1}</td>
+                        <td className={cn(
+                          "py-3 px-2 text-sm font-bold",
+                          index === 0 ? "text-yellow-500" :
+                          index === 1 ? "text-gray-400" :
+                          index === 2 ? "text-amber-600" :
+                          "text-telegram-hint"
+                        )}>{index + 1}</td>
                         <td className="py-3 px-2">
                           <div className="font-medium text-telegram-text">
                             {judge.firstName} {judge.lastName}
@@ -131,11 +139,7 @@ export const StatsPage: React.FC = () => {
                           )}
                         </td>
                         <td className="py-3 px-2 text-center text-sm text-telegram-text">{judge.gamesJudged}</td>
-                        <td className={cn(
-                          "py-3 px-2 text-center text-sm font-semibold",
-                          judge.averageScore >= 6 ? "text-green-500" : 
-                          judge.averageScore >= 4 ? "text-yellow-500" : "text-telegram-text"
-                        )}>
+                        <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text">
                           {judge.averageScore}
                         </td>
                       </tr>

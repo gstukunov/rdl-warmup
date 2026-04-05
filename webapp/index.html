@@ -112,6 +112,10 @@
     <script>
       // Capture errors and show them
       window.onerror = function(msg, url, line, col, error) {
+        // Ignore benign ResizeObserver loop error from Radix UI
+        if (typeof msg === 'string' && msg.includes('ResizeObserver loop')) {
+          return false;
+        }
         console.error('[PAGE ERROR]', msg, 'at', url, line, col, error);
         var errorDiv = document.getElementById('error-display');
         var loader = document.getElementById('initial-loading');
@@ -126,6 +130,11 @@
       };
       
       window.addEventListener('error', function(event) {
+        // Ignore benign ResizeObserver loop error from Radix UI
+        if (event.message && event.message.includes('ResizeObserver loop')) {
+          event.preventDefault();
+          return;
+        }
         console.error('[ERROR EVENT]', event.error);
       });
       
