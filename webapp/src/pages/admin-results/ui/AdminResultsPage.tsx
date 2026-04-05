@@ -122,7 +122,10 @@ export const AdminResultsPage: React.FC<AdminResultsPageProps> = ({
     <Layout
       header={
         <div className="flex items-center justify-between gap-2">
-          <h1 className="text-lg font-semibold">Создание игры с результатами</h1>
+          <div className="flex items-center gap-3">
+            <img src="/logo-raccoon.png" alt="RDL Logo" className="h-8 w-8 object-contain" />
+            <h1 className="text-lg font-semibold">Создание игры с результатами</h1>
+          </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Button onClick={onLogout} variant="secondary" size="sm">

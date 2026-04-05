@@ -42,7 +42,10 @@ export const StatsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-telegram-bg">
       <header className="px-4 py-4 border-b border-telegram-secondary-bg flex items-center justify-between">
-        <h1 className="text-xl font-bold text-telegram-text">RDL статистика тренировочных</h1>
+        <div className="flex items-center gap-3">
+          <img src="/logo-raccoon.png" alt="RDL Logo" className="h-10 w-10 object-contain" />
+          <h1 className="text-xl font-bold text-telegram-text">RDL статистика тренировочных</h1>
+        </div>
         <ThemeToggle />
       </header>
 
