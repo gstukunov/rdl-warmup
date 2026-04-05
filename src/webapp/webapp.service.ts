@@ -32,6 +32,7 @@ import type {
   CompletedGameListItemDto,
   SubmitGameResultsRequestDto,
   CreateCompletedGameRequestDto,
+  PositionResultDto,
 } from './dtos/webapp.dto';
 
 interface SpeakerStat {
@@ -578,37 +579,54 @@ export class WebAppService {
       scores.push(score);
     };
 
+    // Helper to save position scores (handles ironman logic)
+    const savePositionScores = (
+      positionData: PositionResultDto,
+      position: string,
+    ) => {
+      if (!positionData) return;
+
+      if (positionData.isIronman) {
+        // Ironman: one player, take the highest score
+        const speaker = positionData.speaker1;
+        if (speaker.telegramId) {
+          const highestScore = Math.max(
+            positionData.speaker1.score,
+            positionData.speaker2.score,
+          );
+          createScore(speaker.telegramId, position, highestScore, true);
+        }
+      } else {
+        // Normal: two separate speakers
+        if (positionData.speaker1.telegramId) {
+          createScore(
+            positionData.speaker1.telegramId,
+            position,
+            positionData.speaker1.score,
+            false,
+          );
+        }
+        if (positionData.speaker2.telegramId) {
+          createScore(
+            positionData.speaker2.telegramId,
+            position,
+            positionData.speaker2.score,
+            false,
+          );
+        }
+      }
+    };
+
     // Add scores for each position
-    createScore(
-      data.openingGovernment.telegramId,
-      'opening_government',
-      data.openingGovernment.score,
-      data.openingGovernment.isIronman,
-    );
+    savePositionScores(data.openingGovernment, 'opening_government');
+    savePositionScores(data.openingOpposition, 'opening_opposition');
 
-    createScore(
-      data.openingOpposition.telegramId,
-      'opening_opposition',
-      data.openingOpposition.score,
-      data.openingOpposition.isIronman,
-    );
-
-    if (data.closingGovernment?.telegramId) {
-      createScore(
-        data.closingGovernment.telegramId,
-        'closing_government',
-        data.closingGovernment.score,
-        data.closingGovernment.isIronman,
-      );
+    if (data.closingGovernment) {
+      savePositionScores(data.closingGovernment, 'closing_government');
     }
 
-    if (data.closingOpposition?.telegramId) {
-      createScore(
-        data.closingOpposition.telegramId,
-        'closing_opposition',
-        data.closingOpposition.score,
-        data.closingOpposition.isIronman,
-      );
+    if (data.closingOpposition) {
+      savePositionScores(data.closingOpposition, 'closing_opposition');
     }
 
     // Save all scores
@@ -666,37 +684,54 @@ export class WebAppService {
       scores.push(score);
     };
 
+    // Helper to save position scores (handles ironman logic)
+    const savePositionScores = (
+      positionData: PositionResultDto,
+      position: string,
+    ) => {
+      if (!positionData) return;
+
+      if (positionData.isIronman) {
+        // Ironman: one player, take the highest score
+        const speaker = positionData.speaker1;
+        if (speaker.telegramId) {
+          const highestScore = Math.max(
+            positionData.speaker1.score,
+            positionData.speaker2.score,
+          );
+          createScore(speaker.telegramId, position, highestScore, true);
+        }
+      } else {
+        // Normal: two separate speakers
+        if (positionData.speaker1.telegramId) {
+          createScore(
+            positionData.speaker1.telegramId,
+            position,
+            positionData.speaker1.score,
+            false,
+          );
+        }
+        if (positionData.speaker2.telegramId) {
+          createScore(
+            positionData.speaker2.telegramId,
+            position,
+            positionData.speaker2.score,
+            false,
+          );
+        }
+      }
+    };
+
     // Add scores for each position
-    createScore(
-      data.openingGovernment.telegramId,
-      'opening_government',
-      data.openingGovernment.score,
-      data.openingGovernment.isIronman,
-    );
+    savePositionScores(data.openingGovernment, 'opening_government');
+    savePositionScores(data.openingOpposition, 'opening_opposition');
 
-    createScore(
-      data.openingOpposition.telegramId,
-      'opening_opposition',
-      data.openingOpposition.score,
-      data.openingOpposition.isIronman,
-    );
-
-    if (data.closingGovernment?.telegramId) {
-      createScore(
-        data.closingGovernment.telegramId,
-        'closing_government',
-        data.closingGovernment.score,
-        data.closingGovernment.isIronman,
-      );
+    if (data.closingGovernment) {
+      savePositionScores(data.closingGovernment, 'closing_government');
     }
 
-    if (data.closingOpposition?.telegramId) {
-      createScore(
-        data.closingOpposition.telegramId,
-        'closing_opposition',
-        data.closingOpposition.score,
-        data.closingOpposition.isIronman,
-      );
+    if (data.closingOpposition) {
+      savePositionScores(data.closingOpposition, 'closing_opposition');
     }
 
     // Save all scores

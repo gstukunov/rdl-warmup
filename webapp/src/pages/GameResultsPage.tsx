@@ -47,6 +47,12 @@ interface GameResultsPageProps {
   onLogout: () => void;
 }
 
+const createDefaultPosition = (): PositionResult => ({
+  speaker1: { telegramId: null, score: 70 },
+  speaker2: { telegramId: null, score: 70 },
+  isIronman: false,
+});
+
 export const GameResultsPage: React.FC<GameResultsPageProps> = ({
   onLogout,
 }) => {
@@ -64,10 +70,10 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
   const [positionResults, setPositionResults] = useState<
     Record<string, PositionResult>
   >({
-    openingGovernment: { telegramId: null, isIronman: false, score: 70 },
-    openingOpposition: { telegramId: null, isIronman: false, score: 70 },
-    closingGovernment: { telegramId: null, isIronman: false, score: 70 },
-    closingOpposition: { telegramId: null, isIronman: false, score: 70 },
+    openingGovernment: createDefaultPosition(),
+    openingOpposition: createDefaultPosition(),
+    closingGovernment: createDefaultPosition(),
+    closingOpposition: createDefaultPosition(),
   });
 
   useEffect(() => {
@@ -87,18 +93,53 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
     }
   };
 
-  const handlePositionChange = (
-    position: string,
-    field: keyof PositionResult,
-    value: number | boolean | null,
-  ) => {
+  const handleIronmanChange = (position: string, isIronman: boolean) => {
     setPositionResults((prev) => ({
       ...prev,
       [position]: {
         ...prev[position],
-        [field]: value,
+        isIronman,
+        // When switching to ironman, sync speaker2 to speaker1 if speaker1 is selected
+        speaker1: isIronman && prev[position].speaker1.telegramId
+          ? prev[position].speaker1
+          : prev[position].speaker1,
       },
     }));
+  };
+
+  const handleSpeakerChange = (
+    position: string,
+    speaker: 'speaker1' | 'speaker2',
+    field: 'telegramId' | 'score',
+    value: number | null,
+  ) => {
+    setPositionResults((prev) => {
+      const currentPosition = prev[position];
+      const isIronman = currentPosition.isIronman;
+
+      // If ironman and changing speaker1, also update speaker2 to the same speaker
+      if (isIronman && speaker === 'speaker1' && field === 'telegramId') {
+        return {
+          ...prev,
+          [position]: {
+            ...currentPosition,
+            speaker1: { ...currentPosition.speaker1, telegramId: value },
+            speaker2: { ...currentPosition.speaker2, telegramId: value },
+          },
+        };
+      }
+
+      return {
+        ...prev,
+        [position]: {
+          ...currentPosition,
+          [speaker]: {
+            ...currentPosition[speaker],
+            [field]: value,
+          },
+        },
+      };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,13 +164,13 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
     const og = positionResults.openingGovernment;
     const oo = positionResults.openingOpposition;
 
-    if (!og.telegramId) {
-      setError('Выберите игрока для Opening Government');
+    if (!og.speaker1.telegramId || (!og.isIronman && !og.speaker2.telegramId)) {
+      setError('Выберите обоих спикеров для Opening Government');
       return;
     }
 
-    if (!oo.telegramId) {
-      setError('Выберите игрока для Opening Opposition');
+    if (!oo.speaker1.telegramId || (!oo.isIronman && !oo.speaker2.telegramId)) {
+      setError('Выберите обоих спикеров для Opening Opposition');
       return;
     }
 
@@ -141,12 +182,20 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
       judgeTelegramId: Number(selectedJudgeId),
     };
 
-    // Add optional positions if selected
-    if (positionResults.closingGovernment.telegramId) {
+    // Add optional positions if both speakers are selected
+    if (
+      positionResults.closingGovernment.speaker1.telegramId &&
+      (positionResults.closingGovernment.isIronman ||
+        positionResults.closingGovernment.speaker2.telegramId)
+    ) {
       data.closingGovernment = positionResults.closingGovernment;
     }
 
-    if (positionResults.closingOpposition.telegramId) {
+    if (
+      positionResults.closingOpposition.speaker1.telegramId &&
+      (positionResults.closingOpposition.isIronman ||
+        positionResults.closingOpposition.speaker2.telegramId)
+    ) {
       data.closingOpposition = positionResults.closingOpposition;
     }
 
@@ -161,10 +210,10 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
       setMotion('');
       setSelectedJudgeId('');
       setPositionResults({
-        openingGovernment: { telegramId: null, isIronman: false, score: 70 },
-        openingOpposition: { telegramId: null, isIronman: false, score: 70 },
-        closingGovernment: { telegramId: null, isIronman: false, score: 70 },
-        closingOpposition: { telegramId: null, isIronman: false, score: 70 },
+        openingGovernment: createDefaultPosition(),
+        openingOpposition: createDefaultPosition(),
+        closingGovernment: createDefaultPosition(),
+        closingOpposition: createDefaultPosition(),
       });
     } catch (err) {
       setError('Ошибка сохранения результатов');
@@ -260,78 +309,167 @@ export const GameResultsPage: React.FC<GameResultsPageProps> = ({
           <Card>
             <h2 className="section-title">Позиции и оценки</h2>
 
-            {POSITIONS.map((pos) => (
-              <div key={pos.key} className="position-section">
-                <h3 className="position-title">
-                  {pos.label}
-                  {!pos.required && (
-                    <span className="optional"> (опционально)</span>
-                  )}
-                </h3>
+            {POSITIONS.map((pos) => {
+              const positionData = positionResults[pos.key];
+              const isIronman = positionData.isIronman;
 
-                <div className="position-row">
-                  <div className="position-field">
-                    <label className="field-label">Спикер</label>
-                    <select
-                      value={positionResults[pos.key].telegramId || ''}
-                      onChange={(e) =>
-                        handlePositionChange(
-                          pos.key,
-                          'telegramId',
-                          e.target.value ? Number(e.target.value) : null,
-                        )
-                      }
-                      className="form-select"
-                    >
-                      <option value="">
-                        {pos.required ? 'Выберите спикера' : 'Не выбрано'}
-                      </option>
-                      {users.map((user) => (
-                        <option key={user.telegramId} value={user.telegramId}>
-                          {getUserDisplayName(user)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="position-field score-field">
-                    <label className="field-label">Балл</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={positionResults[pos.key].score}
-                      onChange={(e) =>
-                        handlePositionChange(
-                          pos.key,
-                          'score',
-                          Number(e.target.value),
-                        )
-                      }
-                      className="form-input score-input"
-                    />
-                  </div>
-
-                  <div className="position-field checkbox-field">
-                    <label className="checkbox-label">
+              return (
+                <div key={pos.key} className="position-section">
+                  <div className="position-header">
+                    <h3 className="position-title">
+                      {pos.label}
+                      {!pos.required && (
+                        <span className="optional"> (опционально)</span>
+                      )}
+                    </h3>
+                    <label className="checkbox-label ironman-checkbox">
                       <input
                         type="checkbox"
-                        checked={positionResults[pos.key].isIronman}
+                        checked={isIronman}
                         onChange={(e) =>
-                          handlePositionChange(
-                            pos.key,
-                            'isIronman',
-                            e.target.checked,
-                          )
+                          handleIronmanChange(pos.key, e.target.checked)
                         }
                         className="checkbox-input"
                       />
                       <span className="checkbox-text">Ironman</span>
                     </label>
                   </div>
+
+                  {/* Speaker 1 */}
+                  <div className="speaker-row">
+                    <span className="speaker-label">
+                      {isIronman ? 'Спикер (обе речи)' : 'Спикер 1'}
+                    </span>
+                    <div className="speaker-fields">
+                      <select
+                        value={positionData.speaker1.telegramId || ''}
+                        onChange={(e) =>
+                          handleSpeakerChange(
+                            pos.key,
+                            'speaker1',
+                            'telegramId',
+                            e.target.value ? Number(e.target.value) : null,
+                          )
+                        }
+                        className="form-select speaker-select"
+                      >
+                        <option value="">
+                          {pos.required ? 'Выберите спикера' : 'Не выбрано'}
+                        </option>
+                        {users.map((user) => (
+                          <option key={user.telegramId} value={user.telegramId}>
+                            {getUserDisplayName(user)}
+                          </option>
+                        ))}
+                      </select>
+
+                      {isIronman ? (
+                        // Ironman: two score inputs for the same speaker
+                        <>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={positionData.speaker1.score}
+                            onChange={(e) =>
+                              handleSpeakerChange(
+                                pos.key,
+                                'speaker1',
+                                'score',
+                                Number(e.target.value),
+                              )
+                            }
+                            className="form-input score-input"
+                            placeholder="Балл 1"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={positionData.speaker2.score}
+                            onChange={(e) =>
+                              handleSpeakerChange(
+                                pos.key,
+                                'speaker2',
+                                'score',
+                                Number(e.target.value),
+                              )
+                            }
+                            className="form-input score-input"
+                            placeholder="Балл 2"
+                          />
+                        </>
+                      ) : (
+                        // Normal: single score for speaker 1
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={positionData.speaker1.score}
+                          onChange={(e) =>
+                            handleSpeakerChange(
+                              pos.key,
+                              'speaker1',
+                              'score',
+                              Number(e.target.value),
+                            )
+                          }
+                          className="form-input score-input"
+                          placeholder="Балл"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Speaker 2 - only show if not ironman */}
+                  {!isIronman && (
+                    <div className="speaker-row">
+                      <span className="speaker-label">Спикер 2</span>
+                      <div className="speaker-fields">
+                        <select
+                          value={positionData.speaker2.telegramId || ''}
+                          onChange={(e) =>
+                            handleSpeakerChange(
+                              pos.key,
+                              'speaker2',
+                              'telegramId',
+                              e.target.value ? Number(e.target.value) : null,
+                            )
+                          }
+                          className="form-select speaker-select"
+                        >
+                          <option value="">
+                            {pos.required ? 'Выберите спикера' : 'Не выбрано'}
+                          </option>
+                          {users.map((user) => (
+                            <option key={user.telegramId} value={user.telegramId}>
+                              {getUserDisplayName(user)}
+                            </option>
+                          ))}
+                        </select>
+
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={positionData.speaker2.score}
+                          onChange={(e) =>
+                            handleSpeakerChange(
+                              pos.key,
+                              'speaker2',
+                              'score',
+                              Number(e.target.value),
+                            )
+                          }
+                          className="form-input score-input"
+                          placeholder="Балл"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </Card>
 
           <Button

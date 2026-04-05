@@ -117,10 +117,15 @@ export interface CompletedGameListItemDto {
   hasResults: boolean;
 }
 
-export interface PositionResultDto {
+export interface SpeakerResultDto {
   telegramId: number | null;
-  isIronman: boolean;
   score: number;
+}
+
+export interface PositionResultDto {
+  speaker1: SpeakerResultDto;
+  speaker2: SpeakerResultDto;
+  isIronman: boolean;
 }
 
 export interface SubmitGameResultsRequestDto {

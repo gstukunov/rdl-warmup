@@ -150,10 +150,15 @@ export interface CompletedGame {
   hasResults: boolean;
 }
 
-export interface PositionResult {
+export interface SpeakerResult {
   telegramId: number | null;
-  isIronman: boolean;
   score: number;
+}
+
+export interface PositionResult {
+  speaker1: SpeakerResult;
+  speaker2: SpeakerResult;
+  isIronman: boolean;
 }
 
 export interface SubmitGameResultsRequest {
