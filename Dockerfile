@@ -19,7 +19,7 @@ RUN cd webapp && npm ci
 COPY . .
 
 # Build webapp
-RUN cd webapp && npm run build:prod
+RUN npm run webapp:build
 
 # Build the NestJS server
 RUN npm run build:server
