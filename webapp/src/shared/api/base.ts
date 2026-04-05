@@ -1,0 +1,137 @@
+import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios';
+import type { ApiResponse } from './types';
+
+class ApiClient {
+  private client: AxiosInstance;
+  private initData: string = '';
+
+  constructor() {
+    const baseURL = import.meta.env.VITE_API_URL || '/api';
+
+    this.client = axios.create({
+      baseURL,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      timeout: 10000,
+    });
+
+    // Request interceptor to add auth header
+    this.client.interceptors.request.use(
+      (config) => {
+        if (this.initData) {
+          config.headers['X-Telegram-Init-Data'] = this.initData;
+        } else {
+          const data = this.getInitData();
+          if (data) {
+            this.initData = data;
+            config.headers['X-Telegram-Init-Data'] = data;
+          }
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    // Response interceptor for error handling
+    this.client.interceptors.response.use(
+      (response) => response,
+      (error: AxiosError<ApiResponse<unknown>>) => {
+        console.error('API Error:', error.response?.data?.error || error.message);
+        return Promise.reject(error);
+      }
+    );
+
+    this.init();
+  }
+
+  private init() {
+    if (typeof window !== 'undefined') {
+      const tg = (window as any).Telegram?.WebApp;
+
+      if (tg) {
+        if (tg.initData) {
+          this.initData = tg.initData;
+          console.log('[API] Got initData from Telegram WebApp');
+        } else {
+          tg.ready();
+          setTimeout(() => {
+            if (tg.initData) {
+              this.initData = tg.initData;
+              console.log('[API] Got initData after ready');
+            }
+          }, 100);
+        }
+      } else {
+        console.warn('[API] Telegram WebApp not available');
+      }
+    }
+  }
+
+  private getInitData(): string {
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.initData) {
+      return tg.initData;
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const tgWebAppData = urlParams.get('tgWebAppData');
+    if (tgWebAppData) {
+      return tgWebAppData;
+    }
+
+    if (import.meta.env.DEV) {
+      return this.getMockInitData();
+    }
+
+    return '';
+  }
+
+  setInitData(data: string) {
+    this.initData = data;
+    console.log('[API] initData set externally');
+  }
+
+  private getMockInitData(): string {
+    const mockUser = {
+      id: 123456789,
+      first_name: 'Test',
+      last_name: 'User',
+      username: 'testuser',
+      language_code: 'en',
+    };
+
+    const params = new URLSearchParams();
+    params.set('user', JSON.stringify(mockUser));
+    params.set('auth_date', Math.floor(Date.now() / 1000).toString());
+    params.set('hash', 'mock_hash_for_development');
+
+    return params.toString();
+  }
+
+  async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.get<ApiResponse<T>>(url, config);
+    if (!response.data.success) {
+      throw new Error(response.data.error || 'Request failed');
+    }
+    return response.data.data as T;
+  }
+
+  async post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.post<ApiResponse<T>>(url, data, config);
+    if (!response.data.success) {
+      throw new Error(response.data.error || 'Request failed');
+    }
+    return response.data.data as T;
+  }
+
+  async patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.patch<ApiResponse<T>>(url, data, config);
+    if (!response.data.success) {
+      throw new Error(response.data.error || 'Request failed');
+    }
+    return response.data.data as T;
+  }
+}
+
+export const apiClient = new ApiClient();

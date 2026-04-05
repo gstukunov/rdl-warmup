@@ -6,14 +6,17 @@
 
 1. [Overview](#overview)
 2. [Architecture](#architecture)
-3. [Project Structure](#project-structure)
-4. [Frontend](#frontend)
-5. [Backend API](#backend-api)
-6. [Authentication](#authentication)
-7. [Development](#development)
-8. [Deployment](#deployment)
-9. [Telegram SDK](#telegram-sdk)
-10. [Styling](#styling)
+3. [Project Structure (FSD)](#project-structure-fsd)
+4. [Layer Descriptions](#layer-descriptions)
+5. [Import Rules](#import-rules)
+6. [Frontend](#frontend)
+7. [Backend API](#backend-api)
+8. [Authentication](#authentication)
+9. [Development](#development)
+10. [Deployment](#deployment)
+11. [Telegram SDK](#telegram-sdk)
+12. [Styling](#styling)
+13. [Common Tasks](#common-tasks)
 
 ---
 
@@ -49,7 +52,7 @@ The Telegram Mini App provides a native mobile experience for managing BP debate
 ┌──────────────▼──────────────────────────────────────────────┐
 │  React SPA (webapp/)                                         │
 │  - React 18 + TypeScript                                     │
-│  - React Router for navigation                               │
+│  - Feature-Sliced Design (FSD) Architecture                  │
 │  - Telegram SDK (@telegram-apps/sdk)                         │
 │  - Axios for API calls                                       │
 └──────────────┬──────────────────────────────────────────────┘
@@ -69,41 +72,68 @@ The Telegram Mini App provides a native mobile experience for managing BP debate
 
 ---
 
-## Project Structure
+## Project Structure (FSD)
+
+This project follows **[Feature-Sliced Design](https://feature-sliced.design/)** - an architectural methodology for scalable frontend applications.
 
 ```
 webapp/                              # React frontend
 ├── src/
-│   ├── api/                         # API clients
-│   │   ├── client.ts                # Axios client with auth header
-│   │   ├── games.ts                 # Games API methods
-│   │   └── user.ts                  # User API methods
+│   ├── app/                        # Application initialization layer
+│   │   ├── App.tsx                # Root component with routing
+│   │   ├── index.tsx              # Entry point
+│   │   └── styles/                # Global styles
 │   │
-│   ├── components/                  # Reusable UI components
-│   │   ├── Layout.tsx               # Page layout with header/footer
-│   │   ├── Card.tsx                 # Card container component
-│   │   ├── Button.tsx               # Button with Telegram styling
-│   │   └── GameStatus.tsx           # Game status badge
+│   ├── pages/                      # Page components (routes)
+│   │   ├── stats/                 # Public statistics page
+│   │   │   └── ui/
+│   │   │       └── StatsPage.tsx
+│   │   ├── admin-login/           # Admin authentication
+│   │   │   └── ui/
+│   │   │       └── AdminLoginPage.tsx
+│   │   └── admin-results/         # Game results submission
+│   │       └── ui/
+│   │           └── AdminResultsPage.tsx
 │   │
-│   ├── hooks/                       # Custom React hooks
-│   │   └── useTelegram.ts           # Telegram SDK integration
+│   ├── widgets/                    # Complex UI compositions
+│   │   ├── layout/                # Page layout with Telegram theme
+│   │   │   └── ui/
+│   │   │       └── Layout.tsx
+│   │   └── game-card/             # Game card component
+│   │       └── ui/
+│   │           └── GameCard.tsx
 │   │
-│   ├── pages/                       # Page components
-│   │   ├── GamesList.tsx            # Games list page (home)
-│   │   ├── GameDetails.tsx          # Game details page
-│   │   └── Profile.tsx              # User profile page
+│   ├── features/                   # User interactions & features
+│   │   ├── join-game/             # Join game functionality
+│   │   │   ├── api/
+│   │   │   ├── model/
+│   │   │   └── ui/
+│   │   ├── leave-game/            # Leave game functionality
+│   │   └── admin-auth/            # Admin authentication logic
 │   │
-│   ├── types/                       # TypeScript types
-│   │   └── index.ts                 # All type definitions
+│   ├── entities/                   # Business entities
+│   │   ├── game/                  # Game entity
+│   │   │   ├── model/             # Types, interfaces
+│   │   │   ├── api/               # API methods
+│   │   │   └── ui/                # Entity UI (GameStatusBadge)
+│   │   ├── user/                  # User entity
+│   │   │   ├── model/
+│   │   │   ├── api/
+│   │   │   └── ui/                # UserAvatar
+│   │   ├── stats/                 # Statistics entity
+│   │   └── admin/                 # Admin operations entity
 │   │
-│   ├── App.tsx                      # Main app with routing
-│   ├── main.tsx                     # Entry point
-│   └── vite-env.d.ts                # Vite type declarations
+│   └── shared/                     # Shared infrastructure
+│       ├── api/                   # Base API client
+│       ├── ui/                    # UI kit (Button, Card, SearchableSelect)
+│       ├── telegram/              # Telegram SDK integration
+│       ├── config/                # Configuration
+│       └── lib/                   # Utility functions
 │
-├── index.html                       # HTML template
-├── vite.config.ts                   # Vite configuration
-├── tsconfig.json                    # TypeScript config
-└── package.json                     # Dependencies
+├── index.html                      # HTML template
+├── vite.config.ts                  # Vite configuration
+├── tsconfig.json                   # TypeScript config
+└── package.json                    # Dependencies
 
 src/webapp/                          # Backend API (NestJS)
 ├── webapp.controller.ts             # REST endpoints
@@ -121,29 +151,86 @@ public/webapp/                       # Build output (auto-generated)
 
 ---
 
+## Layer Descriptions
+
+### 1. App Layer (`app/`)
+Application initialization, providers, and global styles.
+- **Can import from**: All layers
+- **Contents**: `App.tsx`, entry point, global CSS
+
+### 2. Pages Layer (`pages/`)
+Full page components that represent routes.
+- **Can import from**: `widgets`, `features`, `entities`, `shared`
+- **Example**: `StatsPage`, `AdminLoginPage`, `AdminResultsPage`
+
+### 3. Widgets Layer (`widgets/`)
+Complex UI compositions that combine entities and features.
+- **Can import from**: `entities`, `features`, `shared`
+- **Example**: `Layout`, `GameCard`
+
+### 4. Features Layer (`features/`)
+User interactions and business features.
+- **Can import from**: `entities`, `shared`, other `features`
+- **Example**: `join-game`, `leave-game`, `admin-auth`
+
+### 5. Entities Layer (`entities/`)
+Business entities with their types, APIs, and UI components.
+- **Can import from**: `shared`, other `entities`
+- **Example**: `game`, `user`, `stats`, `admin`
+- **Structure per entity**: `model/` (types), `api/` (API methods), `ui/` (components)
+
+### 6. Shared Layer (`shared/`)
+Reusable infrastructure with no business logic.
+- **Can be imported from anywhere**
+- **Contents**: UI kit, API base, Telegram SDK, utilities
+
+---
+
+## Import Rules
+
+| Layer | Can Import From |
+|-------|-----------------|
+| `shared` | - (foundation layer) |
+| `entities` | `shared`, other `entities` |
+| `features` | `shared`, `entities`, other `features` |
+| `widgets` | `shared`, `entities`, `features` |
+| `pages` | All lower layers |
+| `app` | All layers |
+
+### Path Aliases
+
+All imports use the `@/` alias pointing to `src/`:
+
+```typescript
+// Shared
+import { Button, Card } from '@/shared/ui';
+import { useTelegram } from '@/shared/telegram';
+
+// Entities
+import { gameApi, GameStatusBadge, type Game } from '@/entities/game';
+import { userApi } from '@/entities/user';
+
+// Features
+import { RoleSelector } from '@/features/join-game';
+import { adminAuthApi } from '@/features/admin-auth';
+
+// Widgets
+import { Layout, GameCard } from '@/widgets';
+
+// Pages
+import { StatsPage, AdminLoginPage } from '@/pages';
+```
+
+---
+
 ## Frontend
 
-### Components
-
-#### Layout
-Main page layout that adapts to Telegram's viewport:
-```typescript
-<Layout header={header} footer={footer}>
-  {children}
-</Layout>
-```
-
-#### Card
-Container component with Telegram theme colors:
-```typescript
-<Card onClick={handleClick} padding>
-  Content
-</Card>
-```
+### Shared UI Components
 
 #### Button
-Styled button with haptic feedback:
 ```typescript
+import { Button } from '@/shared/ui';
+
 <Button 
   onClick={handleClick}
   variant="primary" | "secondary" | "danger"
@@ -154,29 +241,83 @@ Styled button with haptic feedback:
 </Button>
 ```
 
-#### GameStatusBadge
-Status indicator with appropriate colors:
+#### Card
 ```typescript
+import { Card } from '@/shared/ui';
+
+<Card onClick={handleClick} padding>
+  Content
+</Card>
+```
+
+#### SearchableSelect
+```typescript
+import { SearchableSelect } from '@/shared/ui';
+
+<SearchableSelect
+  value={selectedValue}
+  onChange={(value) => setSelectedValue(value)}
+  options={[{ value: 1, label: 'Option 1' }]}
+  placeholder="Select..."
+/>
+```
+
+### Entity UI Components
+
+#### GameStatusBadge
+```typescript
+import { GameStatusBadge, GameStatus } from '@/entities/game';
+
 <GameStatusBadge status={GameStatus.REGISTRATION} />
 // Shows: 📝 Registration
 ```
 
+#### UserAvatar
+```typescript
+import { UserAvatar } from '@/entities/user';
+
+<UserAvatar name="John" size={64} />
+```
+
+### Widgets
+
+#### Layout
+```typescript
+import { Layout } from '@/widgets/layout';
+
+<Layout header={header} footer={footer}>
+  {children}
+</Layout>
+```
+
+#### GameCard
+```typescript
+import { GameCard } from '@/widgets/game-card';
+import type { Game } from '@/entities/game';
+
+<GameCard game={game} onClick={handleClick} />
+```
+
+### Features
+
+#### RoleSelector (Join Game)
+```typescript
+import { RoleSelector } from '@/features/join-game';
+
+<RoleSelector
+  onSelect={(role) => setSelectedRole(role)}
+  onJoin={handleJoin}
+  isLoading={isLoading}
+/>
+```
+
 ### Pages
 
-| Page | Route | Description |
-|------|-------|-------------|
-| GamesList | `/` | Shows open games and user's active game |
-| GameDetails | `/games/:id` | Game details, join/leave, participants |
-| Profile | `/profile` | User stats and judge ratings |
-| LoginPage | `/admin` | Admin login with password |
-| GameResultsPage | `/admin/results` | Submit game results with scores |
-
-### State Management
-
-The app uses React hooks for state management:
-- `useState` for local component state
-- `useEffect` for side effects (data fetching)
-- Custom `useTelegram` hook for Telegram SDK
+| Page | Component | Description |
+|------|-----------|-------------|
+| Stats | `StatsPage` | Public speaker/judge statistics |
+| Admin Login | `AdminLoginPage` | Admin password authentication |
+| Admin Results | `AdminResultsPage` | Submit game results with scores |
 
 ---
 
@@ -190,237 +331,79 @@ All endpoints are prefixed with `/webapp` and require authentication.
 ```
 GET /webapp/config
 ```
-Returns bot configuration.
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "botUsername": "rdl_warmup_bot",
-    "apiBaseUrl": "https://example.com/webapp",
-    "environment": "production"
-  }
-}
-```
 
 #### List Open Games
 ```
 GET /webapp/games
-```
-Returns all games in registration/allocating status.
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "uuid",
-      "name": "Game Name",
-      "description": "Description",
-      "status": "registration",
-      "maxParticipants": 20,
-      "participantCount": 5,
-      "isUserRegistered": false,
-      "createdAt": "2026-04-01T..."
-    }
-  ]
-}
 ```
 
 #### Get Game Details
 ```
 GET /webapp/games/:id
 ```
-Returns detailed game information with participants.
 
 #### Get My Game
 ```
 GET /webapp/games/my
 ```
-Returns user's currently active game (or null).
 
 #### Join Game
 ```
 POST /webapp/games/:id/join
 Body: { "role": "player" | "judge" | "wing" }
 ```
-Join a game with selected role.
 
 #### Leave Game
 ```
 POST /webapp/games/:id/leave
 ```
-Leave a game (only during registration).
 
 #### Get Profile
 ```
 GET /webapp/profile
-```
-Returns user profile with stats.
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "user": {
-      "id": "uuid",
-      "telegramId": 123456789,
-      "username": "user",
-      "firstName": "Name",
-      "lastName": null,
-      "isActive": true,
-      "createdAt": "2026-01-01T..."
-    },
-    "gamesPlayed": 10,
-    "averageSpeakerScore": 75.5
-  }
-}
 ```
 
 #### Get Judge Stats
 ```
 GET /webapp/profile/judge-stats
 ```
-Returns judge rating statistics.
 
 ### Stats Endpoint (Public)
 
-#### Get Public Stats
 ```
 GET /stats
 ```
 Returns public speaker and judge statistics. No authentication required.
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "speakers": [
-      {
-        "telegramId": 123456789,
-        "username": "user",
-        "firstName": "John",
-        "gamesPlayed": 10,
-        "averageScore": 75.5
-      }
-    ],
-    "judges": [
-      {
-        "telegramId": 987654321,
-        "username": "judge",
-        "firstName": "Jane",
-        "gamesJudged": 5,
-        "averageScore": 4.2
-      }
-    ]
-  }
-}
-```
-
 ### Admin Endpoints
 
-These endpoints require admin password authentication via `Authorization: Bearer <token>` header.
+Require `Authorization: Bearer <token>` header.
 
-#### Admin Login
-```
-POST /admin/login
-Body: { "password": "admin_password" }
-```
-Returns a token for subsequent admin requests.
-
-#### Get Users
-```
-GET /admin/users
-Authorization: Bearer <token>
-```
-Returns list of all users for speaker/judge selection.
-
-#### Get Completed Games
-```
-GET /admin/games/completed
-Authorization: Bearer <token>
-```
-Returns games that are in progress or completed (ready for results submission).
-
-#### Get Game Details (Admin)
-```
-GET /admin/games/:id/details
-Authorization: Bearer <token>
-```
-Returns detailed game info for admin purposes.
-
-#### Submit Game Results
-```
-POST /admin/games/results
-Authorization: Bearer <token>
-Body: {
-  "gameId": "uuid",
-  "motion": "This house would...",
-  "openingGovernment": {
-    "telegramId": 123456789,
-    "isIronman": false,
-    "score": 75
-  },
-  "openingOpposition": {
-    "telegramId": 987654321,
-    "isIronman": false,
-    "score": 72
-  },
-  "closingGovernment": {
-    "telegramId": 111222333,
-    "isIronman": false,
-    "score": 70
-  },
-  "closingOpposition": {
-    "telegramId": 444555666,
-    "isIronman": false,
-    "score": 68
-  },
-  "judgeTelegramId": 777888999
-}
-```
-Submits speaker scores for all positions and marks game as completed.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/admin/login` | Login with password |
+| GET | `/admin/users` | Get all users |
+| GET | `/admin/games/completed` | Get games for results |
+| GET | `/admin/games/:id/details` | Get game details |
+| POST | `/admin/games/results` | Submit results |
+| POST | `/admin/games/completed` | Create completed game |
 
 ---
 
 ## Authentication
 
-The Mini App uses Telegram's built-in authentication mechanism:
+The Mini App uses Telegram's built-in authentication:
 
-### Flow
-
-1. **User opens app** from Telegram bot
-2. **Telegram SDK** provides `initData` containing:
-   - User info (id, first_name, last_name, username)
-   - Auth date
-   - Hash (HMAC-SHA256 signature)
-
-3. **Frontend** sends `X-Telegram-Init-Data` header with each request
-
-4. **Backend** validates the hash:
-   ```typescript
-   // WebAppAuthGuard
-   const isValid = validateInitData(initData, botToken);
-   ```
-
-5. **User identity** is extracted from initData and attached to request
-
-### Security
-
-- Hash validation ensures data comes from Telegram
-- No separate login/password required
-- HTTPS required in production
-- initData is unique per session
+1. User opens app from Telegram bot
+2. Telegram SDK provides `initData` with user info
+3. Frontend sends `X-Telegram-Init-Data` header
+4. Backend validates the hash using bot token
 
 ### Dev Mode
 
 In development, mock initData is used:
 ```typescript
-// webapp/src/api/client.ts
+// From shared/api/base.ts
 const mockUser = {
   id: 123456789,
   first_name: 'Test',
@@ -479,10 +462,8 @@ npm run build:server
 
 ### Environment Variables
 
-Frontend uses these variables from `.env`:
 ```bash
-# In development, API client uses this base URL
-VITE_API_URL=/webapp
+VITE_API_URL=/webapp    # API base URL
 ```
 
 ---
@@ -491,34 +472,18 @@ VITE_API_URL=/webapp
 
 ### Production Build
 
-1. Build the webapp:
-   ```bash
-   npm run webapp:build
-   ```
+```bash
+# 1. Build webapp
+npm run webapp:build
 
-2. Build the server:
-   ```bash
-   npm run build:server
-   ```
+# 2. Build server
+npm run build:server
 
-3. Static files are automatically served from `public/webapp/`
-
-### Docker
-
-The webapp is included in the production build:
-```dockerfile
-# Build webapp
-RUN npm run webapp:build
-
-# Build server
-RUN npm run build:server
-
-# Static files are in public/webapp/
+# 3. Static files served from public/webapp/
 ```
 
 ### Environment Configuration
 
-Ensure these are set in production:
 ```bash
 TELEGRAM_BOT_USERNAME=your_bot_username
 TELEGRAM_WEBAPP_URL=https://your-domain.com/webapp
@@ -526,93 +491,52 @@ NODE_ENV=production
 ADMIN_PASSWORD=your_secure_admin_password
 ```
 
-### BotFather Configuration
-
-1. Open [@BotFather](https://t.me/botfather)
-2. Send `/mybots`
-3. Select your bot
-4. Go to **Bot Settings** → **Menu Button** → **Configure menu button**
-5. Set button text: "Open App"
-6. Set URL: `https://your-domain.com/webapp`
-
 ---
 
 ## Telegram SDK
 
 ### useTelegram Hook
 
-Custom hook that provides Telegram SDK functionality:
-
 ```typescript
+import { useTelegram } from '@/shared/telegram';
+
 const {
-  isReady,           // SDK initialized
-  user,              // Telegram user info
-  theme,             // Theme colors
-  viewportHeight,    // Viewport height
-  showBackButton,    // Show native back button
-  hideBackButton,    // Hide back button
-  showMainButton,    // Show main button
-  hideMainButton,    // Hide main button
-  impactOccurred,    // Haptic feedback
+  isReady,              // SDK initialized
+  user,                 // Telegram user info
+  theme,                // Theme colors
+  viewportHeight,       // Viewport height
+  showBackButton,       // Show native back button
+  hideBackButton,       // Hide back button
+  showMainButton,       // Show main button
+  hideMainButton,       // Hide main button
+  impactOccurred,       // Haptic feedback
   notificationOccurred, // Notification feedback
-  closeApp,          // Close Mini App
-  expandApp,         // Expand to full height
+  closeApp,             // Close Mini App
+  expandApp,            // Expand to full height
 } = useTelegram();
 ```
 
 ### Theme Integration
 
-The app automatically adapts to Telegram's theme:
-
 ```typescript
-// Theme colors from Telegram
 const theme = {
-  bgColor: '#ffffff',           // Background
-  textColor: '#000000',         // Text
-  hintColor: '#999999',         // Secondary text
-  linkColor: '#2481cc',         // Links
-  buttonColor: '#2481cc',       // Button background
-  buttonTextColor: '#ffffff',   // Button text
-  secondaryBgColor: '#f5f5f5',  // Card background
+  bgColor: '#ffffff',
+  textColor: '#000000',
+  hintColor: '#999999',
+  linkColor: '#2481cc',
+  buttonColor: '#2481cc',
+  buttonTextColor: '#ffffff',
+  secondaryBgColor: '#f5f5f5',
 };
-
-// Applied as CSS variables
---tg-theme-bg-color
---tg-theme-text-color
-...
 ```
 
 ### Haptic Feedback
 
 ```typescript
-// Light impact (buttons)
-impactOccurred('light');
-
-// Medium impact (important actions)
-impactOccurred('medium');
-
-// Notifications
+impactOccurred('light');     // Light impact (buttons)
+impactOccurred('medium');    // Medium impact
 notificationOccurred('success');
 notificationOccurred('error');
-notificationOccurred('warning');
-```
-
-### Native Buttons
-
-```typescript
-// Show back button
-showBackButton(() => navigate(-1));
-
-// Show main button
-showMainButton('Join Game', handleJoin, { color: '#27ae60' });
-
-// Hide buttons on cleanup
-useEffect(() => {
-  return () => {
-    hideBackButton();
-    hideMainButton();
-  };
-}, []);
 ```
 
 ---
@@ -620,8 +544,6 @@ useEffect(() => {
 ## Styling
 
 ### CSS Variables
-
-Telegram theme colors are available as CSS variables:
 
 ```css
 body {
@@ -632,16 +554,9 @@ body {
 .card {
   background-color: var(--tg-theme-secondary-bg-color);
 }
-
-.button {
-  background-color: var(--tg-theme-button-color);
-  color: var(--tg-theme-button-text-color);
-}
 ```
 
 ### Mobile-First
-
-The app is designed for mobile first:
 
 ```css
 /* Prevent text selection */
@@ -650,27 +565,10 @@ The app is designed for mobile first:
   user-select: none;
 }
 
-/* Allow text selection in inputs */
 input, textarea {
   -webkit-user-select: text;
   user-select: text;
 }
-
-/* Prevent pull-to-refresh */
-body {
-  overscroll-behavior: none;
-}
-```
-
-### Responsive Design
-
-```typescript
-// Layout adapts to viewport
-const { viewportHeight } = useTelegram();
-
-<div style={{ minHeight: viewportHeight }}>
-  {/* Content */}
-</div>
 ```
 
 ---
@@ -679,38 +577,121 @@ const { viewportHeight } = useTelegram();
 
 ### Adding a New Page
 
-1. Create page component in `webapp/src/pages/`
-2. Add route in `webapp/src/App.tsx`
-3. Add link/navigation to the page
+1. Create folder in `src/pages/{page-name}/ui/`
+2. Add page component `PageName.tsx`
+3. Add `index.ts` to export component
+4. Export from `src/pages/index.ts`
+5. Import in `src/app/App.tsx`
+
+```typescript
+// src/pages/my-page/ui/MyPage.tsx
+export const MyPage: React.FC = () => {
+  return <Layout><h1>My Page</h1></Layout>;
+};
+
+// src/pages/my-page/ui/index.ts
+export { MyPage } from './MyPage';
+
+// src/pages/my-page/index.ts
+export { MyPage } from './ui';
+
+// src/pages/index.ts
+export { MyPage } from './my-page';
+```
+
+### Adding a New Entity
+
+1. Create folder in `src/entities/{entity-name}/`
+2. Add subfolders: `model/`, `api/`, `ui/` (optional)
+3. Define types in `model/types.ts`
+4. Create API methods in `api/{entity}Api.ts`
+5. Add UI components in `ui/` (if needed)
+6. Export from `src/entities/index.ts`
+
+```typescript
+// src/entities/product/model/types.ts
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+}
+
+// src/entities/product/api/productApi.ts
+import { apiClient } from '@/shared/api';
+import type { Product } from '../model';
+
+export const productApi = {
+  getProducts: () => apiClient.get<Product[]>('/products'),
+};
+
+// src/entities/product/index.ts
+export * from './model';
+export * from './api';
+```
+
+### Adding a New Feature
+
+1. Create folder in `src/features/{feature-name}/`
+2. Add subfolders: `api/`, `model/`, `ui/`
+3. Implement feature logic
+4. Export from `src/features/index.ts`
+
+### Adding a Shared UI Component
+
+1. Create folder in `src/shared/ui/{ComponentName}/`
+2. Add component file `ComponentName.tsx`
+3. Add `index.ts` to export
+4. Export from `src/shared/ui/index.ts`
+
+```typescript
+// src/shared/ui/Badge/Badge.tsx
+import React from 'react';
+
+interface BadgeProps {
+  children: React.ReactNode;
+}
+
+export const Badge: React.FC<BadgeProps> = ({ children }) => {
+  return <span className="badge">{children}</span>;
+};
+
+// src/shared/ui/Badge/index.ts
+export { Badge } from './Badge';
+
+// src/shared/ui/index.ts
+export { Badge } from './Badge';
+```
 
 ### Adding an API Endpoint
 
-1. Add method to `webapp/src/api/client.ts` or create new file
-2. Add endpoint to `src/webapp/webapp.controller.ts`
-3. Implement logic in `src/webapp/webapp.service.ts`
-4. Update DTOs in `src/webapp/dtos/webapp.dto.ts`
+1. Add method to appropriate entity's `api/` folder
+2. Or add to `src/shared/api/` if shared
+
+```typescript
+// src/entities/game/api/gameApi.ts
+export const gameApi = {
+  // Existing methods...
+  
+  // New endpoint
+  updateGame: (id: string, data: UpdateGameDto) =>
+    apiClient.patch<Game>(`/games/${id}`, data),
+};
+```
 
 ### Using Telegram Theme
 
 ```typescript
-const { theme } = useTelegram();
+import { useTelegram } from '@/shared/telegram';
 
-const style = {
-  backgroundColor: theme.secondaryBgColor,
-  color: theme.textColor,
+const MyComponent: React.FC = () => {
+  const { theme } = useTelegram();
+  
+  return (
+    <div style={{ backgroundColor: theme.secondaryBgColor }}>
+      <span style={{ color: theme.textColor }}>Content</span>
+    </div>
+  );
 };
-```
-
-### Handling Back Button
-
-```typescript
-const navigate = useNavigate();
-const { showBackButton, hideBackButton } = useTelegram();
-
-useEffect(() => {
-  showBackButton(() => navigate(-1));
-  return () => hideBackButton();
-}, []);
 ```
 
 ---
@@ -735,11 +716,18 @@ useEffect(() => {
 2. Verify CSS variables are defined
 3. Test in different Telegram themes (light/dark)
 
-### API calls failing
+### Import errors after refactoring
 
-1. Check CORS configuration in `main.ts`
-2. Verify API base URL is correct
-3. Check `X-Telegram-Init-Data` header
+1. Ensure path aliases are correct (`@/`)
+2. Check that barrel exports (`index.ts`) exist
+3. Verify file names match import statements
+
+### TypeScript errors
+
+```bash
+# Check types without emitting
+npx tsc --noEmit
+```
 
 ---
 
@@ -750,10 +738,20 @@ useEffect(() => {
 | Install deps | `npm run webapp:install` |
 | Dev server | `npm run webapp:dev` |
 | Build webapp | `npm run webapp:build` |
+| Type check | `npx tsc --noEmit` |
 | Build all | `npm run build` |
 | Build server | `npm run build:server` |
 
 ---
 
-*Last updated: April 2026*
-*Mini App Version: 1.0.0*
+## Resources
+
+- [Feature-Sliced Design Documentation](https://feature-sliced.design/)
+- [Telegram Mini Apps Documentation](https://core.telegram.org/bots/webapps)
+- [React Documentation](https://react.dev/)
+
+---
+
+*Last updated: April 2026*  
+*Mini App Version: 1.0.0*  
+*Architecture: Feature-Sliced Design (FSD)*

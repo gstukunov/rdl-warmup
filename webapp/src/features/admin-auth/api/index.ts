@@ -1,0 +1,1 @@
+export { adminAuthApi } from './adminAuthApi';
