@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { QueryProvider } from './providers';
-import { useStats } from '@/entities/stats';
+import { useStats, useGameParticipations } from '@/entities/stats';
 import { Button, Skeleton, ThemeToggle, Card, CardContent, Input, Label, SearchableSelect } from '@/shared/ui';
 import { useAdminLogin } from '@/features/admin-auth';
 import { useUsers, useCreateCompletedGame } from '@/entities/admin';
@@ -23,7 +23,7 @@ import './styles/App.css';
 
 console.log('[APP] Module loaded');
 
-type Tab = 'speakers' | 'judges' | 'admin';
+type Tab = 'speakers' | 'judges' | 'games' | 'admin';
 
 // Speakers Content
 const SpeakersContent: React.FC = () => {
@@ -86,6 +86,117 @@ const SpeakersContent: React.FC = () => {
                   <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text">
                     {speaker.averageScore}
                   </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Games Content
+const GamesContent: React.FC = () => {
+  const {
+    data: gamesData,
+    isLoading: gamesLoading,
+    isError: gamesError,
+    refetch: refetchGames,
+  } = useGameParticipations();
+
+  const { users, games } = useMemo(() => {
+    if (!gamesData || gamesData.length === 0) {
+      return { users: [], games: [] };
+    }
+
+    const userMap = new Map<number, { telegramId: number; firstName: string; lastName: string | null }>();
+    gamesData.forEach((game) => {
+      game.participants.forEach((p) => {
+        if (!userMap.has(p.telegramId)) {
+          userMap.set(p.telegramId, p);
+        }
+      });
+    });
+
+    const allUsers = Array.from(userMap.values()).sort((a, b) => {
+      const nameA = `${a.firstName} ${a.lastName ?? ''}`.trim().toLowerCase();
+      const nameB = `${b.firstName} ${b.lastName ?? ''}`.trim().toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+
+    return { users: allUsers, games: gamesData };
+  }, [gamesData]);
+
+  if (gamesLoading) {
+    return (
+      <div className="p-4 space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (gamesError) {
+    return (
+      <div className="p-4 flex flex-col items-center justify-center gap-4 py-12">
+        <div className="text-destructive">Не удалось загрузить данные об играх.</div>
+        <Button onClick={() => refetchGames()}>Попробовать снова</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 space-y-4">
+      <h2 className="text-lg font-semibold text-telegram-text">Участие в играх</h2>
+      {games.length === 0 ? (
+        <div className="text-center py-8 text-telegram-hint">Пока нет завершённых игр</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[600px]">
+            <thead>
+              <tr className="border-b border-telegram-secondary-bg">
+                <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text sticky left-0 bg-telegram-bg z-10 min-w-[140px]">
+                  Имя
+                </th>
+                {games.map((game) => (
+                  <th
+                    key={game.gameId}
+                    className="text-center py-2 px-2 text-sm font-semibold text-telegram-text min-w-[80px]"
+                    title={game.gameName}
+                  >
+                    <div className="truncate max-w-[120px] mx-auto">{game.gameName}</div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.telegramId} className="border-b border-telegram-secondary-bg/50 last:border-0">
+                  <td className="py-3 px-2 sticky left-0 bg-telegram-bg z-10">
+                    <div className="font-medium text-telegram-text whitespace-nowrap">
+                      {user.firstName} {user.lastName}
+                    </div>
+                  </td>
+                  {games.map((game) => {
+                    const participates = game.participants.some(
+                      (p) => p.telegramId === user.telegramId
+                    );
+                    return (
+                      <td key={game.gameId} className="py-3 px-2 text-center text-sm">
+                        <span
+                          className={cn(
+                            'inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium',
+                            participates
+                              ? 'bg-green-500/15 text-green-600'
+                              : 'bg-telegram-secondary-bg text-telegram-hint'
+                          )}
+                        >
+                          {participates ? 'Да' : 'Нет'}
+                        </span>
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -408,6 +519,7 @@ const AppContent: React.FC = () => {
   const tabs = [
     { id: 'speakers' as Tab, label: 'Спикеры' },
     { id: 'judges' as Tab, label: 'Судьи' },
+    { id: 'games' as Tab, label: 'Игры' },
     { id: 'admin' as Tab, label: 'Админка' },
   ];
 
@@ -446,6 +558,7 @@ const AppContent: React.FC = () => {
       <main>
         {activeTab === 'speakers' && <SpeakersContent />}
         {activeTab === 'judges' && <JudgesContent />}
+        {activeTab === 'games' && <GamesContent />}
         {activeTab === 'admin' && (
           isAdmin ? <AdminResultsContent onLogout={handleLogout} /> : <AdminLoginContent onLogin={handleLogin} />
         )}
