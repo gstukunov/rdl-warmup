@@ -226,6 +226,9 @@ export const StatsPage: React.FC = () => {
                           <div className="max-w-[120px] mx-auto whitespace-normal break-words leading-tight">{game.gameName}</div>
                         </th>
                       ))}
+                      <th className="text-center py-2 px-2 text-xs font-semibold text-telegram-text min-w-[60px] border-l border-telegram-secondary-bg">Игрок</th>
+                      <th className="text-center py-2 px-2 text-xs font-semibold text-telegram-text min-w-[60px]">Судья</th>
+                      <th className="text-center py-2 px-2 text-xs font-bold text-telegram-text min-w-[60px]">Всего</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -255,50 +258,28 @@ export const StatsPage: React.FC = () => {
                             </td>
                           );
                         })}
+                        {(() => {
+                          const playerCount = games.filter((g) =>
+                            g.participants.some((p) => p.telegramId === user.telegramId && p.role === 'player')
+                          ).length;
+                          const judgeCount = games.filter((g) =>
+                            g.participants.some((p) => p.telegramId === user.telegramId && (p.role === 'judge' || p.role === 'wing'))
+                          ).length;
+                          const totalCount = games.filter((g) =>
+                            g.participants.some((p) => p.telegramId === user.telegramId)
+                          ).length;
+                          return (
+                            <>
+                              <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text border-l border-telegram-secondary-bg">{playerCount}</td>
+                              <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text">{judgeCount}</td>
+                              <td className="py-3 px-2 text-center text-sm font-bold text-telegram-text">{totalCount}</td>
+                            </>
+                          );
+                        })()}
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot>
-                    <tr className="border-t-2 border-telegram-secondary-bg bg-telegram-secondary-bg/30">
-                      <td className="py-2 px-2 sticky left-0 bg-telegram-secondary-bg/30 z-10 text-xs font-semibold text-telegram-text">
-                        Игроки
-                      </td>
-                      {games.map((game) => {
-                        const count = game.participants.filter((p) => p.role === 'player').length;
-                        return (
-                          <td key={game.gameId} className="py-2 px-2 text-center text-xs font-semibold text-telegram-text">
-                            {count}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                    <tr className="border-b border-telegram-secondary-bg/50 bg-telegram-secondary-bg/30">
-                      <td className="py-2 px-2 sticky left-0 bg-telegram-secondary-bg/30 z-10 text-xs font-semibold text-telegram-text">
-                        Судьи
-                      </td>
-                      {games.map((game) => {
-                        const count = game.participants.filter((p) => p.role === 'judge' || p.role === 'wing').length;
-                        return (
-                          <td key={game.gameId} className="py-2 px-2 text-center text-xs font-semibold text-telegram-text">
-                            {count}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                    <tr className="bg-telegram-secondary-bg/50">
-                      <td className="py-2 px-2 sticky left-0 bg-telegram-secondary-bg/50 z-10 text-xs font-bold text-telegram-text">
-                        Всего
-                      </td>
-                      {games.map((game) => {
-                        const count = game.participants.length;
-                        return (
-                          <td key={game.gameId} className="py-2 px-2 text-center text-xs font-bold text-telegram-text">
-                            {count}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  </tfoot>
+
                 </table>
               </div>
             )}
