@@ -221,10 +221,9 @@ export const StatsPage: React.FC = () => {
                       {games.map((game) => (
                         <th
                           key={game.gameId}
-                          className="text-center py-2 px-2 text-sm font-semibold text-telegram-text min-w-[80px]"
-                          title={game.gameName}
+                          className="text-center py-2 px-2 text-xs font-semibold text-telegram-text min-w-[80px]"
                         >
-                          <div className="truncate max-w-[120px] mx-auto">{game.gameName}</div>
+                          <div className="max-w-[120px] mx-auto whitespace-normal break-words leading-tight">{game.gameName}</div>
                         </th>
                       ))}
                     </tr>
