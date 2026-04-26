@@ -11,6 +11,7 @@ import { Game, GameStatus } from '../game/entities/game.entity';
 import {
   GameParticipant,
   ParticipantRole,
+  ParticipantPosition,
 } from '../game/entities/game-participant.entity';
 import { RoomPosition } from '../game/entities/room-participant.entity';
 import { User } from '../user/entities/user.entity';
@@ -737,6 +738,118 @@ export class WebAppService {
     // Save all scores
     if (scores.length > 0) {
       await this.speakerScoreRepository.save(scores);
+    }
+
+    // Create game participants so players can leave feedback for judges
+    const playerPositionMap = new Map<number, ParticipantPosition>();
+
+    const addPlayer = (
+      telegramId: number | null,
+      position: ParticipantPosition,
+    ) => {
+      if (telegramId) playerPositionMap.set(telegramId, position);
+    };
+
+    if (data.openingGovernment) {
+      addPlayer(
+        data.openingGovernment.speaker1.telegramId,
+        ParticipantPosition.OPENING_GOVERNMENT,
+      );
+      if (!data.openingGovernment.isIronman) {
+        addPlayer(
+          data.openingGovernment.speaker2.telegramId,
+          ParticipantPosition.OPENING_GOVERNMENT,
+        );
+      }
+    }
+
+    if (data.openingOpposition) {
+      addPlayer(
+        data.openingOpposition.speaker1.telegramId,
+        ParticipantPosition.OPENING_OPPOSITION,
+      );
+      if (!data.openingOpposition.isIronman) {
+        addPlayer(
+          data.openingOpposition.speaker2.telegramId,
+          ParticipantPosition.OPENING_OPPOSITION,
+        );
+      }
+    }
+
+    if (data.closingGovernment) {
+      addPlayer(
+        data.closingGovernment.speaker1.telegramId,
+        ParticipantPosition.CLOSING_GOVERNMENT,
+      );
+      if (!data.closingGovernment.isIronman) {
+        addPlayer(
+          data.closingGovernment.speaker2.telegramId,
+          ParticipantPosition.CLOSING_GOVERNMENT,
+        );
+      }
+    }
+
+    if (data.closingOpposition) {
+      addPlayer(
+        data.closingOpposition.speaker1.telegramId,
+        ParticipantPosition.CLOSING_OPPOSITION,
+      );
+      if (!data.closingOpposition.isIronman) {
+        addPlayer(
+          data.closingOpposition.speaker2.telegramId,
+          ParticipantPosition.CLOSING_OPPOSITION,
+        );
+      }
+    }
+
+    const allTelegramIds = [
+      ...playerPositionMap.keys(),
+      data.judgeTelegramId,
+    ];
+
+    const users =
+      allTelegramIds.length > 0
+        ? await this.userRepository.find({
+            where: { telegramId: In(allTelegramIds) },
+          })
+        : [];
+
+    const userMap = new Map(users.map((u) => [Number(u.telegramId), u]));
+
+    const participants: GameParticipant[] = [];
+
+    for (const [telegramId, position] of playerPositionMap) {
+      const user = userMap.get(telegramId);
+      participants.push(
+        this.participantRepository.create({
+          gameId: game.id,
+          telegramId,
+          username: user?.username ?? null,
+          firstName: user?.firstName ?? null,
+          role: ParticipantRole.PLAYER,
+          position,
+          isRegistered: true,
+          registeredAt: new Date(),
+        }),
+      );
+    }
+
+    const judgeUser = userMap.get(data.judgeTelegramId);
+    participants.push(
+      this.participantRepository.create({
+        gameId: game.id,
+        telegramId: data.judgeTelegramId,
+        username: judgeUser?.username ?? null,
+        firstName: judgeUser?.firstName ?? null,
+        role: ParticipantRole.JUDGE,
+        position: ParticipantPosition.NONE,
+        isRegistered: true,
+        registeredAt: new Date(),
+      }),
+    );
+
+    if (participants.length > 0) {
+      await this.participantRepository.save(participants);
     }
 
     return game.id;
