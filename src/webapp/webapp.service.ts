@@ -785,10 +785,11 @@ export class WebAppService {
     const playerPositionMap = new Map<number, ParticipantPosition>();
 
     const addPlayer = (
-      telegramId: number | null,
+      telegramId: number | string | null,
       position: ParticipantPosition,
     ) => {
-      if (telegramId) playerPositionMap.set(telegramId, position);
+      const id = telegramId ? Number(telegramId) : null;
+      if (id) playerPositionMap.set(id, position);
     };
 
     if (data.openingGovernment) {
@@ -878,13 +879,14 @@ export class WebAppService {
       );
     }
 
-    const judgeUser = userMap.get(data.judgeTelegramId);
+    const judgeTelegramId = Number(data.judgeTelegramId);
+    const judgeUser = userMap.get(judgeTelegramId);
     if (judgeUser) {
       participants.push(
         this.participantRepository.create({
           gameId: game.id,
           userId: judgeUser.id,
-          telegramId: data.judgeTelegramId,
+          telegramId: judgeTelegramId,
           username: judgeUser.username,
           firstName: judgeUser.firstName,
           role: ParticipantRole.JUDGE,
@@ -895,9 +897,11 @@ export class WebAppService {
       );
     }
 
-    if (participants.length > 0) {
-      await this.participantRepository.save(participants);
+    if (participants.length === 0) {
+      throw new NotFoundException('No valid users found for game participants');
     }
+
+    await this.participantRepository.save(participants);
 
     return game.id;
   }

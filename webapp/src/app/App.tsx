@@ -181,20 +181,27 @@ const GamesContent: React.FC = () => {
                     </div>
                   </td>
                   {games.map((game) => {
-                    const participates = game.participants.some(
+                    const participant = game.participants.find(
                       (p) => p.telegramId === user.telegramId
                     );
+                    const roleLabel = participant
+                      ? participant.role === 'player'
+                        ? 'Игрок'
+                        : 'Судья'
+                      : 'Не участвовал';
                     return (
                       <td key={game.gameId} className="py-3 px-2 text-center text-sm">
                         <span
                           className={cn(
                             'inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium',
-                            participates
-                              ? 'bg-green-500/15 text-green-600'
+                            participant
+                              ? participant.role === 'player'
+                                ? 'bg-blue-500/15 text-blue-600'
+                                : 'bg-amber-500/15 text-amber-600'
                               : 'bg-telegram-secondary-bg text-telegram-hint'
                           )}
                         >
-                          {participates ? 'Да' : 'Нет'}
+                          {roleLabel}
                         </span>
                       </td>
                     );
