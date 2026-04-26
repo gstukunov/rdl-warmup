@@ -1,18 +1,53 @@
-import React, { useState } from 'react';
-import { useStats } from '@/entities/stats';
+import React, { useState, useMemo } from 'react';
+import { useStats, useGameParticipations } from '@/entities/stats';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { Button, Skeleton, ThemeToggle } from '@/shared/ui';
 import { cn } from '@/shared/lib';
 
+type TabValue = 'speakers' | 'judges' | 'games';
+
 export const StatsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'speakers' | 'judges'>('speakers');
-  
+  const [activeTab, setActiveTab] = useState<TabValue>('speakers');
+
   const { data, isLoading, isError, refetch } = useStats();
+  const {
+    data: gamesData,
+    isLoading: gamesLoading,
+    isError: gamesError,
+    refetch: refetchGames,
+  } = useGameParticipations();
 
   const speakers = data?.speakers ?? [];
   const judges = data?.judges ?? [];
 
-  if (isLoading) {
+  // Build user participation matrix for games tab
+  const { users, games } = useMemo(() => {
+    if (!gamesData || gamesData.length === 0) {
+      return { users: [], games: [] };
+    }
+
+    // Collect all unique users
+    const userMap = new Map<number, { telegramId: number; firstName: string; lastName: string | null }>();
+    gamesData.forEach((game) => {
+      game.participants.forEach((p) => {
+        if (!userMap.has(p.telegramId)) {
+          userMap.set(p.telegramId, p);
+        }
+      });
+    });
+
+    const allUsers = Array.from(userMap.values()).sort((a, b) => {
+      const nameA = `${a.firstName} ${a.lastName ?? ''}`.trim().toLowerCase();
+      const nameB = `${b.firstName} ${b.lastName ?? ''}`.trim().toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+
+    return { users: allUsers, games: gamesData };
+  }, [gamesData]);
+
+  const isPageLoading = activeTab !== 'games' ? isLoading : false;
+
+  if (isPageLoading) {
     return (
       <div className="min-h-screen bg-telegram-bg">
         <header className="px-4 py-4 border-b border-telegram-secondary-bg">
@@ -49,14 +84,17 @@ export const StatsPage: React.FC = () => {
         <ThemeToggle />
       </header>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'speakers' | 'judges')} className="w-full">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabValue)} className="w-full">
         <div className="px-4 py-3 border-b border-telegram-secondary-bg">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="speakers">
               Спикеры ({speakers.length})
             </TabsTrigger>
             <TabsTrigger value="judges">
               Судьи ({judges.length})
+            </TabsTrigger>
+            <TabsTrigger value="games">
+              Игры ({games.length})
             </TabsTrigger>
           </TabsList>
         </div>
@@ -146,6 +184,78 @@ export const StatsPage: React.FC = () => {
                         <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text">
                           {judge.averageScore}
                         </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="games" className="p-4">
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-telegram-text">Участие в играх</h2>
+            {gamesLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-64 w-full" />
+              </div>
+            ) : gamesError ? (
+              <div className="flex flex-col items-center justify-center gap-4 py-12">
+                <div className="text-destructive">Не удалось загрузить данные об играх.</div>
+                <Button onClick={() => refetchGames()}>
+                  Попробовать снова
+                </Button>
+              </div>
+            ) : games.length === 0 ? (
+              <div className="text-center py-8 text-telegram-hint">Пока нет завершённых игр</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[600px]">
+                  <thead>
+                    <tr className="border-b border-telegram-secondary-bg">
+                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text sticky left-0 bg-telegram-bg z-10 min-w-[140px]">
+                        Имя
+                      </th>
+                      {games.map((game) => (
+                        <th
+                          key={game.gameId}
+                          className="text-center py-2 px-2 text-sm font-semibold text-telegram-text min-w-[80px]"
+                          title={game.gameName}
+                        >
+                          <div className="truncate max-w-[120px] mx-auto">{game.gameName}</div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((user) => (
+                      <tr key={user.telegramId} className="border-b border-telegram-secondary-bg/50 last:border-0">
+                        <td className="py-3 px-2 sticky left-0 bg-telegram-bg z-10">
+                          <div className="font-medium text-telegram-text whitespace-nowrap">
+                            {user.firstName} {user.lastName}
+                          </div>
+                        </td>
+                        {games.map((game) => {
+                          const participates = game.participants.some(
+                            (p) => p.telegramId === user.telegramId
+                          );
+                          return (
+                            <td key={game.gameId} className="py-3 px-2 text-center text-sm">
+                              <span
+                                className={cn(
+                                  'inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium',
+                                  participates
+                                    ? 'bg-green-500/15 text-green-600'
+                                    : 'bg-telegram-secondary-bg text-telegram-hint'
+                                )}
+                              >
+                                {participates ? 'Да' : 'Нет'}
+                              </span>
+                            </td>
+                          );
+                        })}
                       </tr>
                     ))}
                   </tbody>

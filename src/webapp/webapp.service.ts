@@ -92,6 +92,46 @@ export class WebAppService {
     };
   }
 
+  async getGameParticipations(): Promise<import('./dtos/webapp.dto').GameParticipationDto[]> {
+    const games = await this.gameRepository.find({
+      where: { status: GameStatus.COMPLETED },
+      relations: ['participants'],
+      order: { createdAt: 'DESC' },
+    });
+
+    // Collect all participant telegram IDs to fetch user details
+    const telegramIds = new Set<number>();
+    games.forEach((game) => {
+      game.participants?.forEach((p) => {
+        if (p.telegramId) telegramIds.add(Number(p.telegramId));
+      });
+    });
+
+    // Fetch users to get last names
+    const users =
+      telegramIds.size > 0
+        ? await this.userRepository.find({
+            where: { telegramId: In(Array.from(telegramIds)) },
+          })
+        : [];
+
+    const userMap = new Map(users.map((u) => [Number(u.telegramId), u]));
+
+    return games.map((game) => ({
+      gameId: game.id,
+      gameName: game.name,
+      participants:
+        game.participants?.map((p) => {
+          const user = p.telegramId ? userMap.get(Number(p.telegramId)) : undefined;
+          return {
+            telegramId: Number(p.telegramId),
+            firstName: user?.firstName ?? p.firstName ?? '',
+            lastName: user?.lastName ?? null,
+          };
+        }) || [],
+    }));
+  }
+
   async getPublicStats(): Promise<PublicStats> {
     // Get speaker statistics - users with at least 1 game
     const speakerScores = await this.speakerScoreRepository

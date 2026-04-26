@@ -148,6 +148,18 @@ export interface CreateCompletedGameRequestDto {
   judgeTelegramId: number;
 }
 
+export interface GameParticipationUserDto {
+  telegramId: number;
+  firstName: string;
+  lastName: string | null;
+}
+
+export interface GameParticipationDto {
+  gameId: string;
+  gameName: string;
+  participants: GameParticipationUserDto[];
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;

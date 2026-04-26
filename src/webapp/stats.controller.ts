@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { WebAppService } from './webapp.service';
-import type { ApiResponse } from './dtos/webapp.dto';
+import type { ApiResponse, GameParticipationDto } from './dtos/webapp.dto';
 
 interface SpeakerStatDto {
   telegramId: number;
@@ -33,6 +33,15 @@ export class StatsController {
     return {
       success: true,
       data: stats,
+    };
+  }
+
+  @Get('games')
+  async getGameParticipations(): Promise<ApiResponse<GameParticipationDto[]>> {
+    const data = await this.webAppService.getGameParticipations();
+    return {
+      success: true,
+      data,
     };
   }
 }

@@ -16,6 +16,18 @@ export interface JudgeStat {
   averageScore: number;
 }
 
+export interface GameParticipationUser {
+  telegramId: number;
+  firstName: string;
+  lastName: string | null;
+}
+
+export interface GameParticipation {
+  gameId: string;
+  gameName: string;
+  participants: GameParticipationUser[];
+}
+
 export interface StatsResponse {
   speakers: SpeakerStat[];
   judges: JudgeStat[];
