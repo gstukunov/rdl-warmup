@@ -199,6 +199,47 @@ const GamesContent: React.FC = () => {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-telegram-secondary-bg bg-telegram-secondary-bg/30">
+                <td className="py-2 px-2 sticky left-0 bg-telegram-secondary-bg/30 z-10 text-xs font-semibold text-telegram-text">
+                  Игроки
+                </td>
+                {games.map((game) => {
+                  const count = game.participants.filter((p) => p.role === 'player').length;
+                  return (
+                    <td key={game.gameId} className="py-2 px-2 text-center text-xs font-semibold text-telegram-text">
+                      {count}
+                    </td>
+                  );
+                })}
+              </tr>
+              <tr className="border-b border-telegram-secondary-bg/50 bg-telegram-secondary-bg/30">
+                <td className="py-2 px-2 sticky left-0 bg-telegram-secondary-bg/30 z-10 text-xs font-semibold text-telegram-text">
+                  Судьи
+                </td>
+                {games.map((game) => {
+                  const count = game.participants.filter((p) => p.role === 'judge' || p.role === 'wing').length;
+                  return (
+                    <td key={game.gameId} className="py-2 px-2 text-center text-xs font-semibold text-telegram-text">
+                      {count}
+                    </td>
+                  );
+                })}
+              </tr>
+              <tr className="bg-telegram-secondary-bg/50">
+                <td className="py-2 px-2 sticky left-0 bg-telegram-secondary-bg/50 z-10 text-xs font-bold text-telegram-text">
+                  Всего
+                </td>
+                {games.map((game) => {
+                  const count = game.participants.length;
+                  return (
+                    <td key={game.gameId} className="py-2 px-2 text-center text-xs font-bold text-telegram-text">
+                      {count}
+                    </td>
+                  );
+                })}
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}

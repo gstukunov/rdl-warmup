@@ -152,6 +152,7 @@ export interface GameParticipationUserDto {
   telegramId: number;
   firstName: string;
   lastName: string | null;
+  role: string;
 }
 
 export interface GameParticipationDto {

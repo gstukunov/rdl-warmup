@@ -96,7 +96,7 @@ export class WebAppService {
     const games = await this.gameRepository.find({
       where: { status: GameStatus.COMPLETED },
       relations: ['participants'],
-      order: { createdAt: 'DESC' },
+      order: { createdAt: 'ASC' },
     });
 
     // Collect all participant telegram IDs to fetch user details
@@ -127,6 +127,7 @@ export class WebAppService {
             telegramId: Number(p.telegramId),
             firstName: user?.firstName ?? p.firstName ?? '',
             lastName: user?.lastName ?? null,
+            role: p.role,
           };
         }) || [],
     }));
