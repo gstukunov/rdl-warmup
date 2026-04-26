@@ -861,12 +861,15 @@ export class WebAppService {
 
     for (const [telegramId, position] of playerPositionMap) {
       const user = userMap.get(telegramId);
+      if (!user) continue;
+
       participants.push(
         this.participantRepository.create({
           gameId: game.id,
+          userId: user.id,
           telegramId,
-          username: user?.username ?? null,
-          firstName: user?.firstName ?? null,
+          username: user.username,
+          firstName: user.firstName,
           role: ParticipantRole.PLAYER,
           position,
           isRegistered: true,
@@ -876,18 +879,21 @@ export class WebAppService {
     }
 
     const judgeUser = userMap.get(data.judgeTelegramId);
-    participants.push(
-      this.participantRepository.create({
-        gameId: game.id,
-        telegramId: data.judgeTelegramId,
-        username: judgeUser?.username ?? null,
-        firstName: judgeUser?.firstName ?? null,
-        role: ParticipantRole.JUDGE,
-        position: ParticipantPosition.NONE,
-        isRegistered: true,
-        registeredAt: new Date(),
-      }),
-    );
+    if (judgeUser) {
+      participants.push(
+        this.participantRepository.create({
+          gameId: game.id,
+          userId: judgeUser.id,
+          telegramId: data.judgeTelegramId,
+          username: judgeUser.username,
+          firstName: judgeUser.firstName,
+          role: ParticipantRole.JUDGE,
+          position: ParticipantPosition.NONE,
+          isRegistered: true,
+          registeredAt: new Date(),
+        }),
+      );
+    }
 
     if (participants.length > 0) {
       await this.participantRepository.save(participants);
