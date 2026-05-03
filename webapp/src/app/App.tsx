@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { QueryProvider } from './providers';
-import { useStats, useGameParticipations } from '@/entities/stats';
-import { Button, Skeleton, ThemeToggle, Card, CardContent, Input, Label, SearchableSelect } from '@/shared/ui';
+import { useStats, useGameParticipations, useGameMotions } from '@/entities/stats';
+import {
+  Button,
+  Skeleton,
+  ThemeToggle,
+  Card,
+  CardContent,
+  Input,
+  Label,
+  SearchableSelect,
+} from '@/shared/ui';
 import { useAdminLogin } from '@/features/admin-auth';
 import { useUsers, useCreateCompletedGame } from '@/entities/admin';
 import { adminApi } from '@/entities/admin';
@@ -23,7 +32,7 @@ import './styles/App.css';
 
 console.log('[APP] Module loaded');
 
-type Tab = 'speakers' | 'judges' | 'games' | 'admin';
+type Tab = 'speakers' | 'judges' | 'games' | 'motions' | 'admin';
 
 // Speakers Content
 const SpeakersContent: React.FC = () => {
@@ -52,37 +61,61 @@ const SpeakersContent: React.FC = () => {
     <div className="p-4 space-y-4">
       <h2 className="text-lg font-semibold text-telegram-text">Тэб Спикеров</h2>
       {speakers.length === 0 ? (
-        <div className="text-center py-8 text-telegram-hint">Пока нет данных о спикерах</div>
+        <div className="text-center py-8 text-telegram-hint">
+          Пока нет данных о спикерах
+        </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-telegram-secondary-bg">
-                <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text w-12">#</th>
-                <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">Имя</th>
-                <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-16">Игры</th>
-                <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-20">Ср. спик</th>
+                <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text w-12">
+                  #
+                </th>
+                <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">
+                  Имя
+                </th>
+                <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-16">
+                  Игры
+                </th>
+                <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-20">
+                  Ср. спик
+                </th>
               </tr>
             </thead>
             <tbody>
               {speakers.map((speaker, index) => (
-                <tr key={speaker.telegramId} className="border-b border-telegram-secondary-bg/50 last:border-0">
-                  <td className={cn(
-                    "py-3 px-2 text-sm font-bold",
-                    index === 0 ? "text-yellow-500" :
-                    index === 1 ? "text-gray-400" :
-                    index === 2 ? "text-amber-600" :
-                    "text-telegram-hint"
-                  )}>{index + 1}</td>
+                <tr
+                  key={speaker.telegramId}
+                  className="border-b border-telegram-secondary-bg/50 last:border-0"
+                >
+                  <td
+                    className={cn(
+                      'py-3 px-2 text-sm font-bold',
+                      index === 0
+                        ? 'text-yellow-500'
+                        : index === 1
+                          ? 'text-gray-400'
+                          : index === 2
+                            ? 'text-amber-600'
+                            : 'text-telegram-hint',
+                    )}
+                  >
+                    {index + 1}
+                  </td>
                   <td className="py-3 px-2">
                     <div className="font-medium text-telegram-text">
                       {speaker.firstName} {speaker.lastName}
                     </div>
                     {speaker.username && (
-                      <div className="text-xs text-telegram-hint">@{speaker.username}</div>
+                      <div className="text-xs text-telegram-hint">
+                        @{speaker.username}
+                      </div>
                     )}
                   </td>
-                  <td className="py-3 px-2 text-center text-sm text-telegram-text">{speaker.gamesPlayed}</td>
+                  <td className="py-3 px-2 text-center text-sm text-telegram-text">
+                    {speaker.gamesPlayed}
+                  </td>
                   <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text">
                     {speaker.averageScore}
                   </td>
@@ -110,7 +143,10 @@ const GamesContent: React.FC = () => {
       return { users: [], games: [] };
     }
 
-    const userMap = new Map<number, { telegramId: number; firstName: string; lastName: string | null }>();
+    const userMap = new Map<
+      number,
+      { telegramId: number; firstName: string; lastName: string | null }
+    >();
     gamesData.forEach((game) => {
       game.participants.forEach((p) => {
         if (!userMap.has(p.telegramId)) {
@@ -140,7 +176,9 @@ const GamesContent: React.FC = () => {
   if (gamesError) {
     return (
       <div className="p-4 flex flex-col items-center justify-center gap-4 py-12">
-        <div className="text-destructive">Не удалось загрузить данные об играх.</div>
+        <div className="text-destructive">
+          Не удалось загрузить данные об играх.
+        </div>
         <Button onClick={() => refetchGames()}>Попробовать снова</Button>
       </div>
     );
@@ -148,9 +186,13 @@ const GamesContent: React.FC = () => {
 
   return (
     <div className="p-4 space-y-4">
-      <h2 className="text-lg font-semibold text-telegram-text">Участие в играх</h2>
+      <h2 className="text-lg font-semibold text-telegram-text">
+        Участие в играх
+      </h2>
       {games.length === 0 ? (
-        <div className="text-center py-8 text-telegram-hint">Пока нет завершённых игр</div>
+        <div className="text-center py-8 text-telegram-hint">
+          Пока нет завершённых игр
+        </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px]">
@@ -164,17 +206,28 @@ const GamesContent: React.FC = () => {
                     key={game.gameId}
                     className="text-center py-2 px-2 text-xs font-semibold text-telegram-text min-w-[80px]"
                   >
-                    <div className="max-w-[120px] mx-auto whitespace-normal break-words leading-tight">{game.gameName}</div>
+                    <div className="max-w-[120px] mx-auto whitespace-normal break-words leading-tight">
+                      {game.gameName}
+                    </div>
                   </th>
                 ))}
-                <th className="text-center py-2 px-2 text-xs font-semibold text-telegram-text min-w-[60px] border-l border-telegram-secondary-bg">Игрок</th>
-                <th className="text-center py-2 px-2 text-xs font-semibold text-telegram-text min-w-[60px]">Судья</th>
-                <th className="text-center py-2 px-2 text-xs font-bold text-telegram-text min-w-[60px]">Всего</th>
+                <th className="text-center py-2 px-2 text-xs font-semibold text-telegram-text min-w-[60px] border-l border-telegram-secondary-bg">
+                  Игрок
+                </th>
+                <th className="text-center py-2 px-2 text-xs font-semibold text-telegram-text min-w-[60px]">
+                  Судья
+                </th>
+                <th className="text-center py-2 px-2 text-xs font-bold text-telegram-text min-w-[60px]">
+                  Всего
+                </th>
               </tr>
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.telegramId} className="border-b border-telegram-secondary-bg/50 last:border-0">
+                <tr
+                  key={user.telegramId}
+                  className="border-b border-telegram-secondary-bg/50 last:border-0"
+                >
                   <td className="py-3 px-2 sticky left-0 bg-telegram-bg z-10">
                     <div className="font-medium text-telegram-text whitespace-nowrap">
                       {user.firstName} {user.lastName}
@@ -182,7 +235,7 @@ const GamesContent: React.FC = () => {
                   </td>
                   {games.map((game) => {
                     const participant = game.participants.find(
-                      (p) => p.telegramId === user.telegramId
+                      (p) => p.telegramId === user.telegramId,
                     );
                     const roleLabel = participant
                       ? participant.role === 'player'
@@ -190,7 +243,10 @@ const GamesContent: React.FC = () => {
                         : 'Судья'
                       : 'Не участвовал';
                     return (
-                      <td key={game.gameId} className="py-3 px-2 text-center text-sm">
+                      <td
+                        key={game.gameId}
+                        className="py-3 px-2 text-center text-sm"
+                      >
                         <span
                           className={cn(
                             'inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium',
@@ -198,7 +254,7 @@ const GamesContent: React.FC = () => {
                               ? participant.role === 'player'
                                 ? 'bg-blue-500/15 text-blue-600'
                                 : 'bg-amber-500/15 text-amber-600'
-                              : 'bg-telegram-secondary-bg text-telegram-hint'
+                              : 'bg-telegram-secondary-bg text-telegram-hint',
                           )}
                         >
                           {roleLabel}
@@ -208,22 +264,128 @@ const GamesContent: React.FC = () => {
                   })}
                   {(() => {
                     const playerCount = games.filter((g) =>
-                      g.participants.some((p) => p.telegramId === user.telegramId && p.role === 'player')
+                      g.participants.some(
+                        (p) =>
+                          p.telegramId === user.telegramId &&
+                          p.role === 'player',
+                      ),
                     ).length;
                     const judgeCount = games.filter((g) =>
-                      g.participants.some((p) => p.telegramId === user.telegramId && (p.role === 'judge' || p.role === 'wing'))
+                      g.participants.some(
+                        (p) =>
+                          p.telegramId === user.telegramId &&
+                          (p.role === 'judge' || p.role === 'wing'),
+                      ),
                     ).length;
                     const totalCount = games.filter((g) =>
-                      g.participants.some((p) => p.telegramId === user.telegramId)
+                      g.participants.some(
+                        (p) => p.telegramId === user.telegramId,
+                      ),
                     ).length;
                     return (
                       <>
-                        <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text border-l border-telegram-secondary-bg">{playerCount}</td>
-                        <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text">{judgeCount}</td>
-                        <td className="py-3 px-2 text-center text-sm font-bold text-telegram-text">{totalCount}</td>
+                        <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text border-l border-telegram-secondary-bg">
+                          {playerCount}
+                        </td>
+                        <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text">
+                          {judgeCount}
+                        </td>
+                        <td className="py-3 px-2 text-center text-sm font-bold text-telegram-text">
+                          {totalCount}
+                        </td>
                       </>
                     );
                   })()}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Motions Content
+const MotionsContent: React.FC = () => {
+  const {
+    data: motionsData,
+    isLoading: motionsLoading,
+    isError: motionsError,
+    refetch: refetchMotions,
+  } = useGameMotions();
+
+  const motions = motionsData ?? [];
+
+  if (motionsLoading) {
+    return (
+      <div className="p-4 space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (motionsError) {
+    return (
+      <div className="p-4 flex flex-col items-center justify-center gap-4 py-12">
+        <div className="text-destructive">
+          Не удалось загрузить данные о темах.
+        </div>
+        <Button onClick={() => refetchMotions()}>Попробовать снова</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 space-y-4">
+      <h2 className="text-lg font-semibold text-telegram-text">Темы игр</h2>
+      {motions.length === 0 ? (
+        <div className="text-center py-8 text-telegram-hint">
+          Пока нет завершённых игр с темами
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-telegram-secondary-bg">
+                <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text w-12">
+                  #
+                </th>
+                <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">
+                  Игра
+                </th>
+                <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">
+                  Тема
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {motions.map((motion, index) => (
+                <tr
+                  key={motion.gameId}
+                  className="border-b border-telegram-secondary-bg/50 last:border-0"
+                >
+                  <td
+                    className={cn(
+                      'py-3 px-2 text-sm font-bold',
+                      index === 0
+                        ? 'text-yellow-500'
+                        : index === 1
+                          ? 'text-gray-400'
+                          : index === 2
+                            ? 'text-amber-600'
+                            : 'text-telegram-hint',
+                    )}
+                  >
+                    {index + 1}
+                  </td>
+                  <td className="py-3 px-2 font-medium text-telegram-text">
+                    {motion.gameName}
+                  </td>
+                  <td className="py-3 px-2 text-sm text-telegram-text">
+                    {motion.motion ?? '—'}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -259,39 +421,65 @@ const JudgesContent: React.FC = () => {
 
   return (
     <div className="p-4 space-y-4">
-      <h2 className="text-lg font-semibold text-telegram-text">Статистика оценок судейства</h2>
+      <h2 className="text-lg font-semibold text-telegram-text">
+        Статистика оценок судейства
+      </h2>
       {judges.length === 0 ? (
-        <div className="text-center py-8 text-telegram-hint">Пока нет данных о судьях</div>
+        <div className="text-center py-8 text-telegram-hint">
+          Пока нет данных о судьях
+        </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-telegram-secondary-bg">
-                <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text w-12">#</th>
-                <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">Имя</th>
-                <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-16">Оценок</th>
-                <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-24">Ср. оценка</th>
+                <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text w-12">
+                  #
+                </th>
+                <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">
+                  Имя
+                </th>
+                <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-16">
+                  Оценок
+                </th>
+                <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-24">
+                  Ср. оценка
+                </th>
               </tr>
             </thead>
             <tbody>
               {judges.map((judge, index) => (
-                <tr key={judge.telegramId} className="border-b border-telegram-secondary-bg/50 last:border-0">
-                  <td className={cn(
-                    "py-3 px-2 text-sm font-bold",
-                    index === 0 ? "text-yellow-500" :
-                    index === 1 ? "text-gray-400" :
-                    index === 2 ? "text-amber-600" :
-                    "text-telegram-hint"
-                  )}>{index + 1}</td>
+                <tr
+                  key={judge.telegramId}
+                  className="border-b border-telegram-secondary-bg/50 last:border-0"
+                >
+                  <td
+                    className={cn(
+                      'py-3 px-2 text-sm font-bold',
+                      index === 0
+                        ? 'text-yellow-500'
+                        : index === 1
+                          ? 'text-gray-400'
+                          : index === 2
+                            ? 'text-amber-600'
+                            : 'text-telegram-hint',
+                    )}
+                  >
+                    {index + 1}
+                  </td>
                   <td className="py-3 px-2">
                     <div className="font-medium text-telegram-text">
                       {judge.firstName} {judge.lastName}
                     </div>
                     {judge.username && (
-                      <div className="text-xs text-telegram-hint">@{judge.username}</div>
+                      <div className="text-xs text-telegram-hint">
+                        @{judge.username}
+                      </div>
                     )}
                   </td>
-                  <td className="py-3 px-2 text-center text-sm text-telegram-text">{judge.gamesJudged}</td>
+                  <td className="py-3 px-2 text-center text-sm text-telegram-text">
+                    {judge.gamesJudged}
+                  </td>
                   <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text">
                     {judge.averageScore}
                   </td>
@@ -340,8 +528,17 @@ const AdminLoginContent: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
                 disabled={loginMutation.isPending}
               />
             </div>
-            {error && <div className="text-sm text-destructive font-medium">{error}</div>}
-            <Button type="submit" className="w-full" loading={loginMutation.isPending} disabled={loginMutation.isPending}>
+            {error && (
+              <div className="text-sm text-destructive font-medium">
+                {error}
+              </div>
+            )}
+            <Button
+              type="submit"
+              className="w-full"
+              loading={loginMutation.isPending}
+              disabled={loginMutation.isPending}
+            >
               Войти
             </Button>
           </form>
@@ -352,11 +549,15 @@ const AdminLoginContent: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
 };
 
 // Admin Results Content
-const AdminResultsContent: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
+const AdminResultsContent: React.FC<{ onLogout: () => void }> = ({
+  onLogout,
+}) => {
   const [gameName, setGameName] = useState('');
   const [motion, setMotion] = useState('');
   const [selectedJudgeId, setSelectedJudgeId] = useState<number | null>(null);
-  const [positionResults, setPositionResults] = useState<PositionResultsRecord>(createDefaultPositionResults());
+  const [positionResults, setPositionResults] = useState<PositionResultsRecord>(
+    createDefaultPositionResults(),
+  );
   const [formError, setFormError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -370,7 +571,10 @@ const AdminResultsContent: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     }));
   }, [users]);
 
-  const handleIronmanChange = (position: keyof PositionResultsRecord, isIronman: boolean) => {
+  const handleIronmanChange = (
+    position: keyof PositionResultsRecord,
+    isIronman: boolean,
+  ) => {
     setPositionResults((prev) => ({
       ...prev,
       [position]: updatePositionIronman(prev[position], isIronman),
@@ -394,13 +598,23 @@ const AdminResultsContent: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     setFormError(null);
     setSuccess(false);
 
-    const validation = validateGameResultsForm(gameName, motion, selectedJudgeId, positionResults);
+    const validation = validateGameResultsForm(
+      gameName,
+      motion,
+      selectedJudgeId,
+      positionResults,
+    );
     if (!validation.isValid) {
       setFormError(validation.error);
       return;
     }
 
-    const data = buildCreateGameRequest(gameName, motion, selectedJudgeId!, positionResults);
+    const data = buildCreateGameRequest(
+      gameName,
+      motion,
+      selectedJudgeId!,
+      positionResults,
+    );
     createGameMutation.mutate(data, {
       onSuccess: () => {
         setSuccess(true);
@@ -426,9 +640,11 @@ const AdminResultsContent: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
   return (
     <div className="p-4 space-y-4 pb-24">
       <div className="flex items-center justify-end gap-2">
-        <Button onClick={onLogout} variant="secondary" size="sm">Выйти</Button>
+        <Button onClick={onLogout} variant="secondary" size="sm">
+          Выйти
+        </Button>
       </div>
-      
+
       {success && (
         <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-green-500 text-sm font-medium">
           {VALIDATION_MESSAGES.SAVE_SUCCESS}
@@ -446,15 +662,33 @@ const AdminResultsContent: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
             <h2 className="text-lg font-semibold">Информация об игре</h2>
             <div className="space-y-2">
               <Label htmlFor="gameName">Название игры</Label>
-              <Input id="gameName" value={gameName} onChange={(e) => setGameName(e.target.value)} placeholder="Введите название" disabled={isSubmitting} />
+              <Input
+                id="gameName"
+                value={gameName}
+                onChange={(e) => setGameName(e.target.value)}
+                placeholder="Введите название"
+                disabled={isSubmitting}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="motion">Тема</Label>
-              <Input id="motion" value={motion} onChange={(e) => setMotion(e.target.value)} placeholder="Введите тему" disabled={isSubmitting} />
+              <Input
+                id="motion"
+                value={motion}
+                onChange={(e) => setMotion(e.target.value)}
+                placeholder="Введите тему"
+                disabled={isSubmitting}
+              />
             </div>
             <div className="space-y-2">
               <Label>Судья</Label>
-              <SearchableSelect value={selectedJudgeId} onChange={(value) => setSelectedJudgeId(value as number | null)} options={userOptions} placeholder="Выберите судью" disabled={isSubmitting} />
+              <SearchableSelect
+                value={selectedJudgeId}
+                onChange={(value) => setSelectedJudgeId(value as number | null)}
+                options={userOptions}
+                placeholder="Выберите судью"
+                disabled={isSubmitting}
+              />
             </div>
           </CardContent>
         </Card>
@@ -466,36 +700,152 @@ const AdminResultsContent: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
               const positionData = positionResults[pos.key];
               const isIronman = positionData.isIronman;
               return (
-                <div key={pos.key} className="space-y-3 pb-6 border-b border-telegram-secondary-bg last:border-0 last:pb-0">
+                <div
+                  key={pos.key}
+                  className="space-y-3 pb-6 border-b border-telegram-secondary-bg last:border-0 last:pb-0"
+                >
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold">
                       {pos.label}
-                      {!pos.required && <span className="text-telegram-hint font-normal text-sm"> (опционально)</span>}
+                      {!pos.required && (
+                        <span className="text-telegram-hint font-normal text-sm">
+                          {' '}
+                          (опционально)
+                        </span>
+                      )}
                     </h3>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={isIronman} onChange={(e) => handleIronmanChange(pos.key, e.target.checked)} className="w-4 h-4 rounded border-telegram-hint" disabled={isSubmitting} />
+                      <input
+                        type="checkbox"
+                        checked={isIronman}
+                        onChange={(e) =>
+                          handleIronmanChange(pos.key, e.target.checked)
+                        }
+                        className="w-4 h-4 rounded border-telegram-hint"
+                        disabled={isSubmitting}
+                      />
                       <span className="text-sm">Ironman</span>
                     </label>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm text-telegram-hint w-20 shrink-0">{isIronman ? 'Спикер (обе речи)' : 'Спикер 1'}</span>
-                      <SearchableSelect value={positionData.speaker1.telegramId} onChange={(value: number | null) => handleSpeakerChange(pos.key, 'speaker1', 'telegramId', value)} options={userOptions} placeholder={pos.required ? 'Выберите спикера' : 'Не выбрано'} disabled={isSubmitting} className="flex-1 min-w-[200px]" />
+                      <span className="text-sm text-telegram-hint w-20 shrink-0">
+                        {isIronman ? 'Спикер (обе речи)' : 'Спикер 1'}
+                      </span>
+                      <SearchableSelect
+                        value={positionData.speaker1.telegramId}
+                        onChange={(value: number | null) =>
+                          handleSpeakerChange(
+                            pos.key,
+                            'speaker1',
+                            'telegramId',
+                            value,
+                          )
+                        }
+                        options={userOptions}
+                        placeholder={
+                          pos.required ? 'Выберите спикера' : 'Не выбрано'
+                        }
+                        disabled={isSubmitting}
+                        className="flex-1 min-w-[200px]"
+                      />
                       {isIronman ? (
                         <>
-                          <Input type="number" min={SCORE_CONSTRAINTS.min} max={SCORE_CONSTRAINTS.max} value={positionData.speaker1.score} onChange={(e) => handleSpeakerChange(pos.key, 'speaker1', 'score', Number(e.target.value))} className="w-20" placeholder="Балл 1" disabled={isSubmitting} />
-                          <Input type="number" min={SCORE_CONSTRAINTS.min} max={SCORE_CONSTRAINTS.max} value={positionData.speaker2.score} onChange={(e) => handleSpeakerChange(pos.key, 'speaker2', 'score', Number(e.target.value))} className="w-20" placeholder="Балл 2" disabled={isSubmitting} />
+                          <Input
+                            type="number"
+                            min={SCORE_CONSTRAINTS.min}
+                            max={SCORE_CONSTRAINTS.max}
+                            value={positionData.speaker1.score}
+                            onChange={(e) =>
+                              handleSpeakerChange(
+                                pos.key,
+                                'speaker1',
+                                'score',
+                                Number(e.target.value),
+                              )
+                            }
+                            className="w-20"
+                            placeholder="Балл 1"
+                            disabled={isSubmitting}
+                          />
+                          <Input
+                            type="number"
+                            min={SCORE_CONSTRAINTS.min}
+                            max={SCORE_CONSTRAINTS.max}
+                            value={positionData.speaker2.score}
+                            onChange={(e) =>
+                              handleSpeakerChange(
+                                pos.key,
+                                'speaker2',
+                                'score',
+                                Number(e.target.value),
+                              )
+                            }
+                            className="w-20"
+                            placeholder="Балл 2"
+                            disabled={isSubmitting}
+                          />
                         </>
                       ) : (
-                        <Input type="number" min={SCORE_CONSTRAINTS.min} max={SCORE_CONSTRAINTS.max} value={positionData.speaker1.score} onChange={(e) => handleSpeakerChange(pos.key, 'speaker1', 'score', Number(e.target.value))} className="w-20" placeholder="Балл" disabled={isSubmitting} />
+                        <Input
+                          type="number"
+                          min={SCORE_CONSTRAINTS.min}
+                          max={SCORE_CONSTRAINTS.max}
+                          value={positionData.speaker1.score}
+                          onChange={(e) =>
+                            handleSpeakerChange(
+                              pos.key,
+                              'speaker1',
+                              'score',
+                              Number(e.target.value),
+                            )
+                          }
+                          className="w-20"
+                          placeholder="Балл"
+                          disabled={isSubmitting}
+                        />
                       )}
                     </div>
                   </div>
                   {!isIronman && (
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm text-telegram-hint w-20 shrink-0">Спикер 2</span>
-                      <SearchableSelect value={positionData.speaker2.telegramId} onChange={(value: number | null) => handleSpeakerChange(pos.key, 'speaker2', 'telegramId', value)} options={userOptions} placeholder={pos.required ? 'Выберите спикера' : 'Не выбрано'} disabled={isSubmitting} className="flex-1 min-w-[200px]" />
-                      <Input type="number" min={SCORE_CONSTRAINTS.min} max={SCORE_CONSTRAINTS.max} value={positionData.speaker2.score} onChange={(e) => handleSpeakerChange(pos.key, 'speaker2', 'score', Number(e.target.value))} className="w-20" placeholder="Балл" disabled={isSubmitting} />
+                      <span className="text-sm text-telegram-hint w-20 shrink-0">
+                        Спикер 2
+                      </span>
+                      <SearchableSelect
+                        value={positionData.speaker2.telegramId}
+                        onChange={(value: number | null) =>
+                          handleSpeakerChange(
+                            pos.key,
+                            'speaker2',
+                            'telegramId',
+                            value,
+                          )
+                        }
+                        options={userOptions}
+                        placeholder={
+                          pos.required ? 'Выберите спикера' : 'Не выбрано'
+                        }
+                        disabled={isSubmitting}
+                        className="flex-1 min-w-[200px]"
+                      />
+                      <Input
+                        type="number"
+                        min={SCORE_CONSTRAINTS.min}
+                        max={SCORE_CONSTRAINTS.max}
+                        value={positionData.speaker2.score}
+                        onChange={(e) =>
+                          handleSpeakerChange(
+                            pos.key,
+                            'speaker2',
+                            'score',
+                            Number(e.target.value),
+                          )
+                        }
+                        className="w-20"
+                        placeholder="Балл"
+                        disabled={isSubmitting}
+                      />
                     </div>
                   )}
                 </div>
@@ -504,7 +854,13 @@ const AdminResultsContent: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
           </CardContent>
         </Card>
 
-        <Button type="submit" className="w-full" loading={isSubmitting} disabled={isSubmitting} size="lg">
+        <Button
+          type="submit"
+          className="w-full"
+          loading={isSubmitting}
+          disabled={isSubmitting}
+          size="lg"
+        >
           Создать игру с результатами
         </Button>
       </form>
@@ -545,6 +901,7 @@ const AppContent: React.FC = () => {
 
   const tabs = [
     { id: 'speakers' as Tab, label: 'Спикеры' },
+    { id: 'motions' as Tab, label: 'Темы' },
     { id: 'judges' as Tab, label: 'Судьи' },
     { id: 'games' as Tab, label: 'Игры' },
     { id: 'admin' as Tab, label: 'Админка' },
@@ -555,13 +912,19 @@ const AppContent: React.FC = () => {
       {/* Header with Logo and Tabs */}
       <header className="px-4 py-4 border-b border-telegram-secondary-bg">
         <div className="flex items-center gap-3 mb-4">
-          <img src="logo-raccoon.png" alt="RDL Logo" className="h-10 w-10 object-contain" />
-          <h1 className="text-xl font-bold text-telegram-text">RDL Статистика</h1>
+          <img
+            src="logo-raccoon.png"
+            alt="RDL Logo"
+            className="h-10 w-10 object-contain"
+          />
+          <h1 className="text-xl font-bold text-telegram-text">
+            RDL Статистика
+          </h1>
           <div className="ml-auto">
             <ThemeToggle />
           </div>
         </div>
-        
+
         {/* Tabs */}
         <div className="flex gap-2">
           {tabs.map((tab) => (
@@ -572,7 +935,7 @@ const AppContent: React.FC = () => {
                 'flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors',
                 activeTab === tab.id
                   ? 'bg-telegram-button text-telegram-button-text'
-                  : 'bg-telegram-secondary-bg text-telegram-text hover:opacity-80'
+                  : 'bg-telegram-secondary-bg text-telegram-text hover:opacity-80',
               )}
             >
               {tab.label}
@@ -586,9 +949,13 @@ const AppContent: React.FC = () => {
         {activeTab === 'speakers' && <SpeakersContent />}
         {activeTab === 'judges' && <JudgesContent />}
         {activeTab === 'games' && <GamesContent />}
-        {activeTab === 'admin' && (
-          isAdmin ? <AdminResultsContent onLogout={handleLogout} /> : <AdminLoginContent onLogin={handleLogin} />
-        )}
+        {activeTab === 'motions' && <MotionsContent />}
+        {activeTab === 'admin' &&
+          (isAdmin ? (
+            <AdminResultsContent onLogout={handleLogout} />
+          ) : (
+            <AdminLoginContent onLogin={handleLogin} />
+          ))}
       </main>
     </div>
   );

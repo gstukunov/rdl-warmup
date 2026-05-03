@@ -1,10 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { useStats, useGameParticipations, useGameMotions } from '@/entities/stats';
+import {
+  useStats,
+  useGameParticipations,
+  useGameMotions,
+} from '@/entities/stats';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { Button, Skeleton, ThemeToggle } from '@/shared/ui';
 import { cn } from '@/shared/lib';
 
-type TabValue = 'speakers' | 'judges' | 'games' | 'themes';
+type TabValue = 'speakers' | 'judges' | 'games' | 'motions';
 
 export const StatsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabValue>('speakers');
@@ -35,7 +39,10 @@ export const StatsPage: React.FC = () => {
     }
 
     // Collect all unique users
-    const userMap = new Map<number, { telegramId: number; firstName: string; lastName: string | null }>();
+    const userMap = new Map<
+      number,
+      { telegramId: number; firstName: string; lastName: string | null }
+    >();
     gamesData.forEach((game) => {
       game.participants.forEach((p) => {
         if (!userMap.has(p.telegramId)) {
@@ -53,13 +60,16 @@ export const StatsPage: React.FC = () => {
     return { users: allUsers, games: gamesData };
   }, [gamesData]);
 
-  const isPageLoading = activeTab !== 'games' && activeTab !== 'themes' ? isLoading : false;
+  const isPageLoading =
+    activeTab !== 'games' && activeTab !== 'motions' ? isLoading : false;
 
   if (isPageLoading) {
     return (
       <div className="min-h-screen bg-telegram-bg">
         <header className="px-4 py-4 border-b border-telegram-secondary-bg">
-          <h1 className="text-xl font-bold text-telegram-text">RDL статистика тренировочных</h1>
+          <h1 className="text-xl font-bold text-telegram-text">
+            RDL статистика тренировочных
+          </h1>
         </header>
         <div className="p-4 space-y-4">
           <Skeleton className="h-10 w-full" />
@@ -73,10 +83,10 @@ export const StatsPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-telegram-bg p-4">
         <div className="flex flex-col items-center justify-center gap-4 py-12">
-          <div className="text-destructive">Failed to load statistics. Please try again later.</div>
-          <Button onClick={() => refetch()}>
-            Попробовать снова
-          </Button>
+          <div className="text-destructive">
+            Failed to load statistics. Please try again later.
+          </div>
+          <Button onClick={() => refetch()}>Попробовать снова</Button>
         </div>
       </div>
     );
@@ -86,65 +96,95 @@ export const StatsPage: React.FC = () => {
     <div className="min-h-screen bg-telegram-bg">
       <header className="px-4 py-4 border-b border-telegram-secondary-bg flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src="logo-raccoon.png" alt="RDL Logo" className="h-10 w-10 object-contain" />
-          <h1 className="text-xl font-bold text-telegram-text">RDL статистика тренировочных</h1>
+          <img
+            src="logo-raccoon.png"
+            alt="RDL Logo"
+            className="h-10 w-10 object-contain"
+          />
+          <h1 className="text-xl font-bold text-telegram-text">
+            RDL статистика тренировочных
+          </h1>
         </div>
         <ThemeToggle />
       </header>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabValue)} className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as TabValue)}
+        className="w-full"
+      >
         <div className="px-4 py-3 border-b border-telegram-secondary-bg">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="speakers">
               Спикеры ({speakers.length})
             </TabsTrigger>
-            <TabsTrigger value="judges">
-              Судьи ({judges.length})
-            </TabsTrigger>
-            <TabsTrigger value="games">
-              Игры ({games.length})
-            </TabsTrigger>
-            <TabsTrigger value="themes">
-              Темы ({motions.length})
-            </TabsTrigger>
+            <TabsTrigger value="judges">Судьи ({judges.length})</TabsTrigger>
+            <TabsTrigger value="games">Игры ({games.length})</TabsTrigger>
+            <TabsTrigger value="motions">Темы ({motions.length})</TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="speakers" className="p-4">
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-telegram-text">Тэб Спикеров</h2>
+            <h2 className="text-lg font-semibold text-telegram-text">
+              Тэб Спикеров
+            </h2>
             {speakers.length === 0 ? (
-              <div className="text-center py-8 text-telegram-hint">Пока нет данных о спикерах</div>
+              <div className="text-center py-8 text-telegram-hint">
+                Пока нет данных о спикерах
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-telegram-secondary-bg">
-                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text w-12">#</th>
-                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">Имя</th>
-                      <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-16">Игры</th>
-                      <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-20">Ср. спик</th>
+                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text w-12">
+                        #
+                      </th>
+                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">
+                        Имя
+                      </th>
+                      <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-16">
+                        Игры
+                      </th>
+                      <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-20">
+                        Ср. спик
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {speakers.map((speaker, index) => (
-                      <tr key={speaker.telegramId} className="border-b border-telegram-secondary-bg/50 last:border-0">
-                        <td className={cn(
-                          "py-3 px-2 text-sm font-bold",
-                          index === 0 ? "text-yellow-500" :
-                          index === 1 ? "text-gray-400" :
-                          index === 2 ? "text-amber-600" :
-                          "text-telegram-hint"
-                        )}>{index + 1}</td>
+                      <tr
+                        key={speaker.telegramId}
+                        className="border-b border-telegram-secondary-bg/50 last:border-0"
+                      >
+                        <td
+                          className={cn(
+                            'py-3 px-2 text-sm font-bold',
+                            index === 0
+                              ? 'text-yellow-500'
+                              : index === 1
+                                ? 'text-gray-400'
+                                : index === 2
+                                  ? 'text-amber-600'
+                                  : 'text-telegram-hint',
+                          )}
+                        >
+                          {index + 1}
+                        </td>
                         <td className="py-3 px-2">
                           <div className="font-medium text-telegram-text">
                             {speaker.firstName} {speaker.lastName}
                           </div>
                           {speaker.username && (
-                            <div className="text-xs text-telegram-hint">@{speaker.username}</div>
+                            <div className="text-xs text-telegram-hint">
+                              @{speaker.username}
+                            </div>
                           )}
                         </td>
-                        <td className="py-3 px-2 text-center text-sm text-telegram-text">{speaker.gamesPlayed}</td>
+                        <td className="py-3 px-2 text-center text-sm text-telegram-text">
+                          {speaker.gamesPlayed}
+                        </td>
                         <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text">
                           {speaker.averageScore}
                         </td>
@@ -159,39 +199,65 @@ export const StatsPage: React.FC = () => {
 
         <TabsContent value="judges" className="p-4">
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-telegram-text">Статистика оценок судейства</h2>
+            <h2 className="text-lg font-semibold text-telegram-text">
+              Статистика оценок судейства
+            </h2>
             {judges.length === 0 ? (
-              <div className="text-center py-8 text-telegram-hint">Пока нет данных о судьях</div>
+              <div className="text-center py-8 text-telegram-hint">
+                Пока нет данных о судьях
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-telegram-secondary-bg">
-                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text w-12">#</th>
-                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">Имя</th>
-                      <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-16">Оценок</th>
-                      <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-24">Ср. оценка</th>
+                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text w-12">
+                        #
+                      </th>
+                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">
+                        Имя
+                      </th>
+                      <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-16">
+                        Оценок
+                      </th>
+                      <th className="text-center py-2 px-2 text-sm font-semibold text-telegram-text w-24">
+                        Ср. оценка
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {judges.map((judge, index) => (
-                      <tr key={judge.telegramId} className="border-b border-telegram-secondary-bg/50 last:border-0">
-                        <td className={cn(
-                          "py-3 px-2 text-sm font-bold",
-                          index === 0 ? "text-yellow-500" :
-                          index === 1 ? "text-gray-400" :
-                          index === 2 ? "text-amber-600" :
-                          "text-telegram-hint"
-                        )}>{index + 1}</td>
+                      <tr
+                        key={judge.telegramId}
+                        className="border-b border-telegram-secondary-bg/50 last:border-0"
+                      >
+                        <td
+                          className={cn(
+                            'py-3 px-2 text-sm font-bold',
+                            index === 0
+                              ? 'text-yellow-500'
+                              : index === 1
+                                ? 'text-gray-400'
+                                : index === 2
+                                  ? 'text-amber-600'
+                                  : 'text-telegram-hint',
+                          )}
+                        >
+                          {index + 1}
+                        </td>
                         <td className="py-3 px-2">
                           <div className="font-medium text-telegram-text">
                             {judge.firstName} {judge.lastName}
                           </div>
                           {judge.username && (
-                            <div className="text-xs text-telegram-hint">@{judge.username}</div>
+                            <div className="text-xs text-telegram-hint">
+                              @{judge.username}
+                            </div>
                           )}
                         </td>
-                        <td className="py-3 px-2 text-center text-sm text-telegram-text">{judge.gamesJudged}</td>
+                        <td className="py-3 px-2 text-center text-sm text-telegram-text">
+                          {judge.gamesJudged}
+                        </td>
                         <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text">
                           {judge.averageScore}
                         </td>
@@ -204,9 +270,11 @@ export const StatsPage: React.FC = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="themes" className="p-4">
+        <TabsContent value="motions" className="p-4">
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-telegram-text">Темы игр</h2>
+            <h2 className="text-lg font-semibold text-telegram-text">
+              Темы игр
+            </h2>
             {motionsLoading ? (
               <div className="space-y-4">
                 <Skeleton className="h-10 w-full" />
@@ -214,35 +282,59 @@ export const StatsPage: React.FC = () => {
               </div>
             ) : motionsError ? (
               <div className="flex flex-col items-center justify-center gap-4 py-12">
-                <div className="text-destructive">Не удалось загрузить данные о темах.</div>
+                <div className="text-destructive">
+                  Не удалось загрузить данные о темах.
+                </div>
                 <Button onClick={() => refetchMotions()}>
                   Попробовать снова
                 </Button>
               </div>
             ) : motions.length === 0 ? (
-              <div className="text-center py-8 text-telegram-hint">Пока нет завершённых игр с темами</div>
+              <div className="text-center py-8 text-telegram-hint">
+                Пока нет завершённых игр с темами
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-telegram-secondary-bg">
-                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text w-12">#</th>
-                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">Игра</th>
-                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">Тема</th>
+                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text w-12">
+                        #
+                      </th>
+                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">
+                        Игра
+                      </th>
+                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">
+                        Тема
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {motions.map((motion, index) => (
-                      <tr key={motion.gameId} className="border-b border-telegram-secondary-bg/50 last:border-0">
-                        <td className={cn(
-                          "py-3 px-2 text-sm font-bold",
-                          index === 0 ? "text-yellow-500" :
-                          index === 1 ? "text-gray-400" :
-                          index === 2 ? "text-amber-600" :
-                          "text-telegram-hint"
-                        )}>{index + 1}</td>
-                        <td className="py-3 px-2 font-medium text-telegram-text">{motion.gameName}</td>
-                        <td className="py-3 px-2 text-sm text-telegram-text">{motion.motion ?? '—'}</td>
+                      <tr
+                        key={motion.gameId}
+                        className="border-b border-telegram-secondary-bg/50 last:border-0"
+                      >
+                        <td
+                          className={cn(
+                            'py-3 px-2 text-sm font-bold',
+                            index === 0
+                              ? 'text-yellow-500'
+                              : index === 1
+                                ? 'text-gray-400'
+                                : index === 2
+                                  ? 'text-amber-600'
+                                  : 'text-telegram-hint',
+                          )}
+                        >
+                          {index + 1}
+                        </td>
+                        <td className="py-3 px-2 font-medium text-telegram-text">
+                          {motion.gameName}
+                        </td>
+                        <td className="py-3 px-2 text-sm text-telegram-text">
+                          {motion.motion ?? '—'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -254,7 +346,9 @@ export const StatsPage: React.FC = () => {
 
         <TabsContent value="games" className="p-4">
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-telegram-text">Участие в играх</h2>
+            <h2 className="text-lg font-semibold text-telegram-text">
+              Участие в играх
+            </h2>
             {gamesLoading ? (
               <div className="space-y-4">
                 <Skeleton className="h-10 w-full" />
@@ -262,13 +356,17 @@ export const StatsPage: React.FC = () => {
               </div>
             ) : gamesError ? (
               <div className="flex flex-col items-center justify-center gap-4 py-12">
-                <div className="text-destructive">Не удалось загрузить данные об играх.</div>
+                <div className="text-destructive">
+                  Не удалось загрузить данные об играх.
+                </div>
                 <Button onClick={() => refetchGames()}>
                   Попробовать снова
                 </Button>
               </div>
             ) : games.length === 0 ? (
-              <div className="text-center py-8 text-telegram-hint">Пока нет завершённых игр</div>
+              <div className="text-center py-8 text-telegram-hint">
+                Пока нет завершённых игр
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[600px]">
@@ -282,17 +380,28 @@ export const StatsPage: React.FC = () => {
                           key={game.gameId}
                           className="text-center py-2 px-2 text-xs font-semibold text-telegram-text min-w-[80px]"
                         >
-                          <div className="max-w-[120px] mx-auto whitespace-normal break-words leading-tight">{game.gameName}</div>
+                          <div className="max-w-[120px] mx-auto whitespace-normal break-words leading-tight">
+                            {game.gameName}
+                          </div>
                         </th>
                       ))}
-                      <th className="text-center py-2 px-2 text-xs font-semibold text-telegram-text min-w-[60px] border-l border-telegram-secondary-bg">Игрок</th>
-                      <th className="text-center py-2 px-2 text-xs font-semibold text-telegram-text min-w-[60px]">Судья</th>
-                      <th className="text-center py-2 px-2 text-xs font-bold text-telegram-text min-w-[60px]">Всего</th>
+                      <th className="text-center py-2 px-2 text-xs font-semibold text-telegram-text min-w-[60px] border-l border-telegram-secondary-bg">
+                        Игрок
+                      </th>
+                      <th className="text-center py-2 px-2 text-xs font-semibold text-telegram-text min-w-[60px]">
+                        Судья
+                      </th>
+                      <th className="text-center py-2 px-2 text-xs font-bold text-telegram-text min-w-[60px]">
+                        Всего
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {users.map((user) => (
-                      <tr key={user.telegramId} className="border-b border-telegram-secondary-bg/50 last:border-0">
+                      <tr
+                        key={user.telegramId}
+                        className="border-b border-telegram-secondary-bg/50 last:border-0"
+                      >
                         <td className="py-3 px-2 sticky left-0 bg-telegram-bg z-10">
                           <div className="font-medium text-telegram-text whitespace-nowrap">
                             {user.firstName} {user.lastName}
@@ -300,7 +409,7 @@ export const StatsPage: React.FC = () => {
                         </td>
                         {games.map((game) => {
                           const participant = game.participants.find(
-                            (p) => p.telegramId === user.telegramId
+                            (p) => p.telegramId === user.telegramId,
                           );
                           const roleLabel = participant
                             ? participant.role === 'player'
@@ -308,7 +417,10 @@ export const StatsPage: React.FC = () => {
                               : 'Судья'
                             : 'Не участвовал';
                           return (
-                            <td key={game.gameId} className="py-3 px-2 text-center text-sm">
+                            <td
+                              key={game.gameId}
+                              className="py-3 px-2 text-center text-sm"
+                            >
                               <span
                                 className={cn(
                                   'inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium',
@@ -316,36 +428,52 @@ export const StatsPage: React.FC = () => {
                                     ? participant.role === 'player'
                                       ? 'bg-blue-500/15 text-blue-600'
                                       : 'bg-amber-500/15 text-amber-600'
-                                    : 'bg-telegram-secondary-bg text-telegram-hint'
+                                    : 'bg-telegram-secondary-bg text-telegram-hint',
                                 )}
                               >
                                 {roleLabel}
                               </span>
                             </td>
                           );
-                        })};
+                        })}
+                        ;
                         {(() => {
                           const playerCount = games.filter((g) =>
-                            g.participants.some((p) => p.telegramId === user.telegramId && p.role === 'player')
+                            g.participants.some(
+                              (p) =>
+                                p.telegramId === user.telegramId &&
+                                p.role === 'player',
+                            ),
                           ).length;
                           const judgeCount = games.filter((g) =>
-                            g.participants.some((p) => p.telegramId === user.telegramId && (p.role === 'judge' || p.role === 'wing'))
+                            g.participants.some(
+                              (p) =>
+                                p.telegramId === user.telegramId &&
+                                (p.role === 'judge' || p.role === 'wing'),
+                            ),
                           ).length;
                           const totalCount = games.filter((g) =>
-                            g.participants.some((p) => p.telegramId === user.telegramId)
+                            g.participants.some(
+                              (p) => p.telegramId === user.telegramId,
+                            ),
                           ).length;
                           return (
                             <>
-                              <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text border-l border-telegram-secondary-bg">{playerCount}</td>
-                              <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text">{judgeCount}</td>
-                              <td className="py-3 px-2 text-center text-sm font-bold text-telegram-text">{totalCount}</td>
+                              <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text border-l border-telegram-secondary-bg">
+                                {playerCount}
+                              </td>
+                              <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text">
+                                {judgeCount}
+                              </td>
+                              <td className="py-3 px-2 text-center text-sm font-bold text-telegram-text">
+                                {totalCount}
+                              </td>
                             </>
                           );
                         })()}
                       </tr>
                     ))}
                   </tbody>
-
                 </table>
               </div>
             )}

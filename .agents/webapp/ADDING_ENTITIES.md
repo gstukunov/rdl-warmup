@@ -425,6 +425,124 @@ export * from './model'; // Types included automatically
 
 ---
 
+## Adding a New Tab to the Statistics Page
+
+The project has two main statistics UIs that use tabs:
+- **`webapp/src/app/App.tsx`** — Main app with tabs (Speakers, Judges, Games, Admin, etc.)
+- **`webapp/src/pages/stats/ui/StatsPage.tsx`** — Standalone stats page (legacy/alternative view)
+
+When adding a new tab (e.g., "Темы" / "Motions"), update **both** files to keep them in sync.
+
+### Step 1: Backend API (if new data is needed)
+
+If the tab displays data that is not already fetched:
+
+1. **Add DTO** in `src/webapp/dtos/webapp.dto.ts`:
+   ```typescript
+   export interface GameMotionDto {
+     gameId: string;
+     gameName: string;
+     motion: string | null;
+   }
+   ```
+
+2. **Add service method** in `src/webapp/webapp.service.ts`.
+
+3. **Add controller endpoint** in `src/webapp/stats.controller.ts`:
+   ```typescript
+   @Get('motions')
+   async getGameMotions(): Promise<ApiResponse<GameMotionDto[]>> {
+     const data = await this.webAppService.getGameMotions();
+     return { success: true, data };
+   }
+   ```
+
+### Step 2: Frontend Entity Layer
+
+1. **Add type** in `webapp/src/entities/stats/model/types.ts`:
+   ```typescript
+   export interface GameMotion {
+     gameId: string;
+     gameName: string;
+     motion: string | null;
+   }
+   ```
+
+2. **Export type** from `webapp/src/entities/stats/model/index.ts`.
+
+3. **Add API method** in `webapp/src/entities/stats/api/statsApi.ts`:
+   ```typescript
+   getGameMotions: () => apiClient.get<GameMotion[]>('/stats/motions'),
+   ```
+
+4. **Add query hook** in `webapp/src/entities/stats/api/queries.ts`:
+   ```typescript
+   export const useGameMotions = () => {
+     return useQuery({
+       queryKey: statsKeys.motions(),
+       queryFn: () => statsApi.getGameMotions(),
+       staleTime: 1000 * 60 * 2,
+     });
+   };
+   ```
+
+5. **Export hook** from `webapp/src/entities/stats/api/index.ts`.
+
+### Step 3: Update `App.tsx`
+
+1. **Import the hook**:
+   ```typescript
+   import { useStats, useGameParticipations, useGameMotions } from '@/entities/stats';
+   ```
+
+2. **Extend the `Tab` union type**:
+   ```typescript
+   type Tab = 'speakers' | 'judges' | 'games' | 'motions' | 'admin';
+   ```
+
+3. **Add the tab to the `tabs` array**:
+   ```typescript
+   const tabs = [
+     { id: 'speakers' as Tab, label: 'Спикеры' },
+     { id: 'motions' as Tab, label: 'Темы' },
+     { id: 'judges' as Tab, label: 'Судьи' },
+     { id: 'games' as Tab, label: 'Игры' },
+     { id: 'admin' as Tab, label: 'Админка' },
+   ];
+   ```
+
+4. **Create the content component** (e.g., `MotionsContent`) using the query hook.
+
+5. **Add rendering** in the main return:
+   ```typescript
+   {activeTab === 'motions' && <MotionsContent />}
+   ```
+
+### Step 4: Update `StatsPage.tsx`
+
+1. **Import the hook**.
+
+2. **Extend `TabValue` union type**.
+
+3. **Call the hook** inside the component.
+
+4. **Update `TabsList`**:
+   - Increase `grid-cols-N` to match the new tab count.
+   - Add `<TabsTrigger value="motions">Темы ({motions.length})</TabsTrigger>`.
+
+5. **Add `<TabsContent value="motions">`** with the table/content.
+
+6. **Update `isPageLoading`** logic if the new tab loads independently.
+
+### ⚠️ Critical Rules
+
+- **Tab value consistency**: The `value` prop on `<TabsTrigger>` and `<TabsContent>` must match exactly. A mismatch (e.g., trigger `value="motions"` but content `value="themes"`) will silently break the tab.
+- **Update both `App.tsx` and `StatsPage.tsx`** unless you know for certain only one is used.
+- **Keep `Tab` / `TabValue` types in sync** with the actual `value` strings used in triggers.
+- **Increase grid columns** (`grid-cols-3` → `grid-cols-4`) when adding a tab to prevent layout overflow.
+
+---
+
 ## See Also
 
 - `BASE.md` - Webapp architecture overview
