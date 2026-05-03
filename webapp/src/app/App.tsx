@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { QueryProvider } from './providers';
 import { useStats, useGameParticipations, useGameMotions } from '@/entities/stats';
+import { useMe } from '@/entities/user';
 import {
   Button,
   Skeleton,
@@ -862,6 +863,9 @@ const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('speakers');
   const [isAdmin, setIsAdmin] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const { data: meData } = useMe();
 
   useEffect(() => {
     try {
@@ -872,6 +876,21 @@ const AppContent: React.FC = () => {
     } finally {
       setChecking(false);
     }
+  }, []);
+
+  useEffect(() => {
+    if (meData?.isAdmin) {
+      setIsAdmin(true);
+    }
+  }, [meData]);
+
+  useEffect(() => {
+    const handler = () => {
+      adminApi.clearToken();
+      setIsAdmin(false);
+    };
+    window.addEventListener('admin:session-expired', handler);
+    return () => window.removeEventListener('admin:session-expired', handler);
   }, []);
 
   const handleLogin = () => setIsAdmin(true);
@@ -899,7 +918,7 @@ const AppContent: React.FC = () => {
   return (
     <div className="min-h-screen bg-telegram-bg">
       {/* Header with Logo and Tabs */}
-      <header className="px-4 py-4 border-b border-telegram-secondary-bg">
+      <header className="px-4 py-4 border-b border-telegram-secondary-bg relative">
         <div className="flex items-center gap-3 mb-4">
           <img
             src="logo-raccoon.png"
@@ -909,13 +928,32 @@ const AppContent: React.FC = () => {
           <h1 className="text-xl font-bold text-telegram-text">
             RDL Статистика
           </h1>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
+            {/* Mobile menu button */}
+            <button
+              className="md:hidden p-2 rounded-lg bg-telegram-secondary-bg text-telegram-text"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Menu"
+            >
+              {mobileMenuOpen ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2">
+        {/* Desktop Tabs */}
+        <div className="hidden md:flex gap-2">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -931,6 +969,29 @@ const AppContent: React.FC = () => {
             </button>
           ))}
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden absolute right-4 top-16 z-50 bg-telegram-bg border border-telegram-secondary-bg rounded-lg shadow-lg p-2 space-y-1 min-w-[160px]">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setMobileMenuOpen(false);
+                }}
+                className={cn(
+                  'w-full text-left py-2 px-3 rounded-md text-sm font-medium transition-colors',
+                  activeTab === tab.id
+                    ? 'bg-telegram-button text-telegram-button-text'
+                    : 'text-telegram-text hover:bg-telegram-secondary-bg',
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       {/* Content */}

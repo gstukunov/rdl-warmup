@@ -7,6 +7,7 @@ export const userKeys = {
   profile: () => [...userKeys.all, 'profile'] as const,
   judgeStats: () => [...userKeys.all, 'judge-stats'] as const,
   config: () => [...userKeys.all, 'config'] as const,
+  me: () => [...userKeys.all, 'me'] as const,
 };
 
 // Get user profile
@@ -31,5 +32,15 @@ export const useConfig = () => {
     queryKey: userKeys.config(),
     queryFn: () => userApi.getConfig(),
     staleTime: Infinity, // Config doesn't change during session
+  });
+};
+
+// Check if current Telegram user is admin
+export const useMe = () => {
+  return useQuery({
+    queryKey: userKeys.me(),
+    queryFn: () => userApi.getMe(),
+    retry: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

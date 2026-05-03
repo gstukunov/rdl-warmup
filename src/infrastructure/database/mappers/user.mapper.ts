@@ -21,6 +21,7 @@ export class UserMapper {
       firstName: typeOrmUser.firstName,
       lastName: typeOrmUser.lastName,
       isActive: typeOrmUser.isActive,
+      isAdmin: typeOrmUser.isAdmin,
       createdAt: typeOrmUser.createdAt,
       updatedAt: typeOrmUser.updatedAt,
     });
@@ -38,6 +39,7 @@ export class UserMapper {
     typeOrmUser.firstName = domainUser.firstName;
     typeOrmUser.lastName = domainUser.lastName;
     typeOrmUser.isActive = domainUser.isActive;
+    typeOrmUser.isAdmin = domainUser.isAdmin;
     typeOrmUser.createdAt = domainUser.createdAt;
     typeOrmUser.updatedAt = domainUser.updatedAt;
     typeOrmUser.preferences = {};

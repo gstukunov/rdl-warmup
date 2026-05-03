@@ -303,19 +303,25 @@ constructor(private repo: GameRepositoryImpl) {}
 ### WebApp Module (Mini App)
 - Location: `src/webapp/`
 - Endpoints: `/webapp/*`
-- Auth: Telegram initData validation
+- Auth: **Optional** Telegram initData validation
+  - With valid initData → `telegramUser` attached to request
+  - Without initData → anonymous request allowed (`telegramUser = null`)
+  - Endpoints that require a user (profile, join/leave game) throw `UnauthorizedException` when `telegramUser` is null
 
 ### Telegram Module (Bot)
 - Location: `src/telegram/`
 - Handles bot commands and messages
 
 ### Stats Module (Public)
-- Endpoint: `GET /stats`
+- Endpoints: `GET /stats`, `GET /stats/games`, `GET /stats/motions`
 - No authentication required
 
 ### Admin Module
 - Endpoints: `/admin/*`
-- Auth: Bearer token from `/admin/login`
+- Auth: **Dual method**
+  1. **Bearer token** from `POST /admin/login` (stored in-memory on server, localStorage on client)
+  2. **Telegram initData** — if the user exists in DB with `is_admin = true`, the `X-Telegram-Init-Data` header is accepted as valid admin auth
+- Invalid/expired tokens are cleared client-side on 401 responses
 
 ---
 
@@ -356,15 +362,26 @@ npm run migration:revert
 
 ### Telegram WebApp Auth
 
-1. Frontend sends `X-Telegram-Init-Data` header
-2. `WebAppAuthGuard` validates the hash
-3. User extracted from initData
+1. Frontend sends `X-Telegram-Init-Data` header (if available)
+2. `WebAppAuthGuard` validates the hash (or allows anonymous if header is missing)
+3. User extracted from initData and attached to `request.telegramUser`
+4. **Development mock**: `hash=mock_hash_for_development` is recognized and skips HMAC validation
 
 ### Admin Auth
 
+**Method 1 — Bearer Token:**
 1. POST `/admin/login` with password
-2. Returns JWT token
+2. Returns random token stored in server memory + localStorage
 3. Send as `Authorization: Bearer <token>`
+
+**Method 2 — Telegram Admin:**
+1. User opens Mini App with valid Telegram initData
+2. Backend looks up user by `telegramId` in DB
+3. If `user.isAdmin === true`, request is authorized
+
+**Token Invalidation:**
+- On any 401 response from admin endpoints, the frontend clears `localStorage` token and dispatches `admin:session-expired` event
+- `App.tsx` listens for this event and resets admin state
 
 ---
 
@@ -377,6 +394,51 @@ npm run migration:revert
 5. **DTOs** - Validate at boundary
 6. **Mappers** - Separate domain from ORM
 7. **Transactions** - Commands should be atomic
+
+## Authorization Patterns
+
+### Optional Telegram Auth (WebApp Guard)
+
+`WebAppAuthGuard` supports optional authentication:
+- **With initData** → validates hash, attaches `telegramUser` to request
+- **Without initData** → allows request with `telegramUser = null`
+- **Invalid initData** → throws `UnauthorizedException`
+
+Endpoints that require a user must check `req.telegramUser` themselves:
+
+```typescript
+@Get('profile')
+async getProfile(@Req() req: Request & WebAppRequest) {
+  if (!req.telegramUser) {
+    throw new UnauthorizedException('Authentication required');
+  }
+  // ... fetch profile for req.telegramUser.id
+}
+```
+
+### Dual Admin Auth (Admin Guard)
+
+`AdminAuthGuard` accepts **either** bearer token **or** Telegram initData from an admin user:
+
+```typescript
+// 1. Bearer token
+const authHeader = request.headers['authorization']; // Bearer <token>
+
+// 2. Telegram initData
+const initData = request.headers['x-telegram-init-data'];
+// Validates hash → parses user → looks up in DB → checks user.isAdmin
+```
+
+### Adding `isAdmin` to User
+
+To add an admin flag to the user entity:
+
+1. **ORM Entity**: Add `@Column({ type: 'boolean', default: false }) isAdmin: boolean`
+2. **Domain Entity**: Add `isAdmin` to `UserProps`, getter, and `setAdmin()` method
+3. **Mapper**: Map `isAdmin` in both directions
+4. **DTOs**: Expose `isAdmin` in response DTOs where needed
+5. **Migration**: Create a TypeORM migration to add the column
+6. **Database**: Set `is_admin = true` manually for admin users
 
 ---
 

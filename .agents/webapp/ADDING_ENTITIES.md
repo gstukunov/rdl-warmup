@@ -411,6 +411,29 @@ export const useCreateEntity = () => {
 };
 ```
 
+### Admin Auth Detection Pattern
+
+The app supports two admin auth methods (password bearer token + Telegram `isAdmin`). Use the `useMe` hook to detect Telegram admin status on mount:
+
+```typescript
+import { useMe } from '@/entities/user';
+
+const AppContent: React.FC = () => {
+  const [isAdmin, setIsAdmin] = useState(false);
+  const { data: meData } = useMe();
+
+  useEffect(() => {
+    if (meData?.isAdmin) {
+      setIsAdmin(true);
+    }
+  }, [meData]);
+
+  // ...
+};
+```
+
+The `useMe` hook calls `GET /webapp/me` which returns `{ isAdmin: boolean }`. It works silently in both Telegram and browser environments.
+
 ### Type Exports Pattern
 
 Export types with explicit `type` keyword:
@@ -518,6 +541,8 @@ If the tab displays data that is not already fetched:
    {activeTab === 'motions' && <MotionsContent />}
    ```
 
+> **Mobile layout**: The app uses a burger menu on small screens (`md:hidden`). New tabs are automatically included in both the desktop tab row (`hidden md:flex`) and the mobile dropdown menu. No extra mobile work is needed when adding a tab.
+
 ### Step 4: Update `StatsPage.tsx`
 
 1. **Import the hook**.
@@ -539,7 +564,7 @@ If the tab displays data that is not already fetched:
 - **Tab value consistency**: The `value` prop on `<TabsTrigger>` and `<TabsContent>` must match exactly. A mismatch (e.g., trigger `value="motions"` but content `value="themes"`) will silently break the tab.
 - **Update both `App.tsx` and `StatsPage.tsx`** unless you know for certain only one is used.
 - **Keep `Tab` / `TabValue` types in sync** with the actual `value` strings used in triggers.
-- **Increase grid columns** (`grid-cols-3` → `grid-cols-4`) when adding a tab to prevent layout overflow.
+- **Mobile overflow is handled** by the burger menu — no need to adjust grid columns in `App.tsx`.
 
 ---
 

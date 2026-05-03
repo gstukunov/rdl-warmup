@@ -1,4 +1,4 @@
-export type { UserProfile, JudgeStats } from './types';
+export type { UserProfile, JudgeStats, MeResponse } from './types';
 
 export {
   DEFAULT_SPEAKER_SCORE,

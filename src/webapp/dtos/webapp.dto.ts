@@ -49,6 +49,7 @@ export interface UserProfileDto {
     firstName: string | null;
     lastName: string | null;
     isActive: boolean;
+    isAdmin: boolean;
     createdAt: string;
   };
   gamesPlayed: number;
@@ -103,6 +104,7 @@ export interface UserOptionDto {
   username: string | null;
   firstName: string;
   lastName: string | null;
+  isAdmin: boolean;
 }
 
 export interface CompletedGameListItemDto {

@@ -1,7 +1,7 @@
 # RDL Warmup - System Overview
 
 > **Project**: RDL Warmup Bot - Telegram Bot + Mini App for BP Debate Games
-> **Last Updated**: April 2026
+> **Last Updated**: May 2026
 
 ---
 
@@ -102,17 +102,20 @@ NestJS validates initData (webapp/guards/)
 Business logic → Database → Response
 ```
 
+> **Browser access**: The webapp also works in a regular browser without Telegram auth. Public stats endpoints (`/api/stats/*`) require no auth. Mini-app endpoints (`/api/webapp/*`) allow anonymous requests but protect user-specific actions (join/leave game, profile) with optional Telegram auth.
+
+
 ### 3. Public Stats Flow
 ```
-User visits /stats
+User visits /stats or opens webapp in browser
     ↓
-No auth required
+No auth required for public stats
     ↓
 NestJS serves webapp
     ↓
-React App calls GET /stats
+React App calls GET /stats, GET /stats/games, GET /stats/motions
     ↓
-Public endpoint returns data
+Public endpoints return data
 ```
 
 ---

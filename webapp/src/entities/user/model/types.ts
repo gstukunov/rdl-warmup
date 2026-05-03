@@ -18,3 +18,8 @@ export interface JudgeStats {
   averageScore: number;
   totalFeedbacks: number;
 }
+
+// Me response
+export interface MeResponse {
+  isAdmin: boolean;
+}

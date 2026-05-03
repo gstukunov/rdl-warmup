@@ -4,4 +4,5 @@ export {
   useProfile,
   useJudgeStats,
   useConfig,
+  useMe,
 } from './queries';

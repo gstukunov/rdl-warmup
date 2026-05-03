@@ -92,6 +92,16 @@ export class WebAppService {
     };
   }
 
+  async checkAdminStatus(telegramId: number | null): Promise<boolean> {
+    if (!telegramId) {
+      return false;
+    }
+    const user = await this.userRepository.findOne({
+      where: { telegramId },
+    });
+    return user?.isAdmin ?? false;
+  }
+
   async getGameMotions(): Promise<import('./dtos/webapp.dto').GameMotionDto[]> {
     const games = await this.gameRepository.find({
       where: { status: GameStatus.COMPLETED },
@@ -324,6 +334,7 @@ export class WebAppService {
         firstName: user.firstName,
         lastName: user.lastName,
         isActive: user.isActive,
+        isAdmin: user.isAdmin,
         createdAt: user.createdAt.toISOString(),
       },
       gamesPlayed,
@@ -543,6 +554,7 @@ export class WebAppService {
       username: user.username,
       firstName: user.firstName ?? '',
       lastName: user.lastName,
+      isAdmin: user.isAdmin,
     }));
   }
 

@@ -337,6 +337,8 @@ export class ProductOrmEntity {
 }
 ```
 
+> **Adding boolean flags (e.g., `isAdmin`)**: Use `@Column({ type: 'boolean', default: false })`. Always add a corresponding migration — do **not** rely on `synchronize: true`.
+
 ---
 
 ### Step 9: Create Mapper

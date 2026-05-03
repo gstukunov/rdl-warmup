@@ -8,6 +8,7 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { WebAppService } from './webapp.service';
 import { WebAppAuthGuard, type WebAppRequest } from './guards/webapp-auth.guard';
@@ -22,6 +23,10 @@ import type {
   JoinGameRequestDto,
 } from './dtos/webapp.dto';
 
+interface MeResponse {
+  isAdmin: boolean;
+}
+
 @Controller('api/webapp')
 @UseGuards(WebAppAuthGuard)
 export class WebAppController {
@@ -35,11 +40,24 @@ export class WebAppController {
     };
   }
 
+  @Get('me')
+  async getMe(
+    @Req() req: Request & WebAppRequest,
+  ): Promise<ApiResponse<MeResponse>> {
+    const isAdmin = await this.webAppService.checkAdminStatus(
+      req.telegramUser?.id ?? null,
+    );
+    return {
+      success: true,
+      data: { isAdmin },
+    };
+  }
+
   @Get('games')
   async getOpenGames(
     @Req() req: Request & WebAppRequest,
   ): Promise<ApiResponse<GameListItemDto[]>> {
-    const games = await this.webAppService.getOpenGames(req.telegramUser.id);
+    const games = await this.webAppService.getOpenGames(req.telegramUser?.id ?? 0);
     return {
       success: true,
       data: games,
@@ -50,6 +68,9 @@ export class WebAppController {
   async getMyGame(
     @Req() req: Request & WebAppRequest,
   ): Promise<ApiResponse<GameDetailsDto | null>> {
+    if (!req.telegramUser) {
+      throw new UnauthorizedException('Authentication required');
+    }
     const game = await this.webAppService.getMyGame(req.telegramUser.id);
     return {
       success: true,
@@ -62,7 +83,7 @@ export class WebAppController {
     @Param('id') id: string,
     @Req() req: Request & WebAppRequest,
   ): Promise<ApiResponse<GameDetailsDto>> {
-    const game = await this.webAppService.getGameById(id, req.telegramUser.id);
+    const game = await this.webAppService.getGameById(id, req.telegramUser?.id ?? 0);
     return {
       success: true,
       data: game,
@@ -76,6 +97,9 @@ export class WebAppController {
     @Body() body: JoinGameRequestDto,
     @Req() req: Request & WebAppRequest,
   ): Promise<ApiResponse<void>> {
+    if (!req.telegramUser) {
+      throw new UnauthorizedException('Authentication required');
+    }
     await this.webAppService.joinGame(
       id,
       req.telegramUser.id,
@@ -92,6 +116,9 @@ export class WebAppController {
     @Param('id') id: string,
     @Req() req: Request & WebAppRequest,
   ): Promise<ApiResponse<void>> {
+    if (!req.telegramUser) {
+      throw new UnauthorizedException('Authentication required');
+    }
     await this.webAppService.leaveGame(id, req.telegramUser.id);
     return {
       success: true,
@@ -113,6 +140,9 @@ export class WebAppController {
   async getProfile(
     @Req() req: Request & WebAppRequest,
   ): Promise<ApiResponse<UserProfileDto>> {
+    if (!req.telegramUser) {
+      throw new UnauthorizedException('Authentication required');
+    }
     const profile = await this.webAppService.getUserProfile(req.telegramUser.id);
     return {
       success: true,
@@ -124,6 +154,9 @@ export class WebAppController {
   async getJudgeStats(
     @Req() req: Request & WebAppRequest,
   ): Promise<ApiResponse<JudgeStatsDto>> {
+    if (!req.telegramUser) {
+      throw new UnauthorizedException('Authentication required');
+    }
     const stats = await this.webAppService.getJudgeStats(req.telegramUser.id);
     return {
       success: true,

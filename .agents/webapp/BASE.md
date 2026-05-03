@@ -287,9 +287,31 @@ const { data } = await apiClient.get('/games');
 await apiClient.post('/games', { name: 'Game 1' });
 ```
 
+### Admin API Auth Wrapper
+
+Admin API methods use a `withAuth` helper that catches 401 errors, clears the stored token, and dispatches a `admin:session-expired` event:
+
+```typescript
+const withAuth = async <T>(fn: () => Promise<T>): Promise<T> => {
+  try {
+    return await fn();
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
+      window.dispatchEvent(new CustomEvent('admin:session-expired'));
+    }
+    throw error;
+  }
+};
+```
+
+`App.tsx` listens for `admin:session-expired` and resets `isAdmin` state so the user sees the login form again.
+
 ### Telegram Auth
 
-All WebApp API calls include `X-Telegram-Init-Data` header automatically.
+WebApp API calls include `X-Telegram-Init-Data` header automatically **when Telegram is available**. In a regular browser without Telegram, the header is omitted and public endpoints still work.
+
+> **Optional auth pattern**: The backend `WebAppAuthGuard` allows requests without initData (sets `telegramUser = null`). Endpoints that need a user check for null and throw `UnauthorizedException`.
 
 ---
 
@@ -309,6 +331,8 @@ const {
   notificationOccurred, // Notification feedback
 } = useTelegram();
 ```
+
+> In non-Telegram environments (browser), `user` is `null` (or a mock in DEV mode). The app gracefully degrades to showing public stats only.
 
 ### Haptic Feedback
 
@@ -360,6 +384,15 @@ Utility-first CSS with custom theme:
 ```
 
 ---
+
+## Mobile Responsive Design
+
+The app uses a **burger menu** on mobile screens (below `md:` breakpoint) to avoid tab overflow:
+
+- **Desktop**: Horizontal tab row with all tabs visible
+- **Mobile**: Hamburger button in the header (next to theme toggle) opens a dropdown menu
+
+Implementation is in `App.tsx` using Tailwind responsive classes (`hidden md:flex`, `md:hidden`).
 
 ## Build & Deploy
 

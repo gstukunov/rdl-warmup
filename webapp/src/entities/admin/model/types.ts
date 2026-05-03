@@ -3,6 +3,7 @@ export interface UserOption {
   username: string | null;
   firstName: string;
   lastName: string | null;
+  isAdmin: boolean;
 }
 
 export interface CompletedGame {

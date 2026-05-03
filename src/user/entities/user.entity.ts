@@ -28,6 +28,9 @@ export class User {
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;
 
+  @Column({ name: 'is_admin', type: 'boolean', default: false })
+  isAdmin: boolean;
+
   @Column({ name: 'preferences', type: 'jsonb', default: {} })
   preferences: Record<string, any>;
 

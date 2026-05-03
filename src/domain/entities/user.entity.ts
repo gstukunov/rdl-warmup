@@ -15,6 +15,7 @@ export interface UserProps {
   firstName: string | null;
   lastName: string | null;
   isActive: boolean;
+  isAdmin: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -33,6 +34,7 @@ export class User {
   private _firstName: string | null;
   private _lastName: string | null;
   private _isActive: boolean;
+  private _isAdmin: boolean;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
 
@@ -43,6 +45,7 @@ export class User {
     this._firstName = props.firstName;
     this._lastName = props.lastName;
     this._isActive = props.isActive;
+    this._isAdmin = props.isAdmin;
     this._createdAt = props.createdAt;
     this._updatedAt = props.updatedAt;
   }
@@ -60,6 +63,7 @@ export class User {
       firstName: props.firstName,
       lastName: props.lastName ?? null,
       isActive: true,
+      isAdmin: false,
       createdAt: now,
       updatedAt: now,
     });
@@ -102,6 +106,10 @@ export class User {
     return this._isActive;
   }
 
+  get isAdmin(): boolean {
+    return this._isAdmin;
+  }
+
   get createdAt(): Date {
     return new Date(this._createdAt);
   }
@@ -129,6 +137,11 @@ export class User {
 
   activate(): void {
     this._isActive = true;
+    this._updatedAt = new Date();
+  }
+
+  setAdmin(isAdmin: boolean): void {
+    this._isAdmin = isAdmin;
     this._updatedAt = new Date();
   }
 }

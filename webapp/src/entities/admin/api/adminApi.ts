@@ -8,6 +8,22 @@ import type {
 } from '../model';
 import { ADMIN_TOKEN_KEY } from '../model/constants';
 
+const dispatchSessionExpired = () => {
+  window.dispatchEvent(new CustomEvent('admin:session-expired'));
+};
+
+const withAuth = async <T>(fn: () => Promise<T>): Promise<T> => {
+  try {
+    return await fn();
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
+      dispatchSessionExpired();
+    }
+    throw error;
+  }
+};
+
 export const adminApi = {
   // Store admin token
   setToken: (token: string) => {
@@ -39,50 +55,60 @@ export const adminApi = {
   // Get all users (for speaker/judge selection)
   getUsers: async (): Promise<UserOption[]> => {
     const token = adminApi.getToken();
-    return apiClient.get<UserOption[]>('/admin/users', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    return withAuth(() =>
+      apiClient.get<UserOption[]>('/admin/users', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+    );
   },
 
   // Get completed games list
   getCompletedGames: async (): Promise<CompletedGame[]> => {
     const token = adminApi.getToken();
-    return apiClient.get<CompletedGame[]>('/admin/games/completed', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    return withAuth(() =>
+      apiClient.get<CompletedGame[]>('/admin/games/completed', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+    );
   },
 
   // Get game details for admin
   getGameDetails: async (gameId: string): Promise<GameDetails> => {
     const token = adminApi.getToken();
-    return apiClient.get<GameDetails>(`/admin/games/${gameId}/details`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    return withAuth(() =>
+      apiClient.get<GameDetails>(`/admin/games/${gameId}/details`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+    );
   },
 
   // Submit game results
   submitGameResults: async (data: SubmitGameResultsRequest): Promise<void> => {
     const token = adminApi.getToken();
-    return apiClient.post<void>('/admin/games/results', data, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    return withAuth(() =>
+      apiClient.post<void>('/admin/games/results', data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+    );
   },
 
   // Create a new completed game with results
   createCompletedGame: async (data: CreateCompletedGameRequest): Promise<{ gameId: string }> => {
     const token = adminApi.getToken();
-    return apiClient.post<{ gameId: string }>('/admin/games/completed', data, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    return withAuth(() =>
+      apiClient.post<{ gameId: string }>('/admin/games/completed', data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+    );
   },
 };
