@@ -1,1 +1,1 @@
-export type { SpeakerStat, JudgeStat, StatsResponse, GameParticipation, GameParticipationUser } from './types';
+export type { SpeakerStat, JudgeStat, StatsResponse, GameParticipation, GameParticipationUser, GameMotion } from './types';

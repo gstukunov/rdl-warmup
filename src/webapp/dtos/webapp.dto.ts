@@ -161,6 +161,12 @@ export interface GameParticipationDto {
   participants: GameParticipationUserDto[];
 }
 
+export interface GameMotionDto {
+  gameId: string;
+  gameName: string;
+  motion: string | null;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;

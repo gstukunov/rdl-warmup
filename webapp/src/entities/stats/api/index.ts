@@ -3,4 +3,5 @@ export {
   statsKeys,
   useStats,
   useGameParticipations,
+  useGameMotions,
 } from './queries';

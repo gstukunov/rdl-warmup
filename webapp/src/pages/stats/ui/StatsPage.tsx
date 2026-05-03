@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { useStats, useGameParticipations } from '@/entities/stats';
+import { useStats, useGameParticipations, useGameMotions } from '@/entities/stats';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { Button, Skeleton, ThemeToggle } from '@/shared/ui';
 import { cn } from '@/shared/lib';
 
-type TabValue = 'speakers' | 'judges' | 'games';
+type TabValue = 'speakers' | 'judges' | 'games' | 'themes';
 
 export const StatsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabValue>('speakers');
@@ -17,8 +17,16 @@ export const StatsPage: React.FC = () => {
     refetch: refetchGames,
   } = useGameParticipations();
 
+  const {
+    data: motionsData,
+    isLoading: motionsLoading,
+    isError: motionsError,
+    refetch: refetchMotions,
+  } = useGameMotions();
+
   const speakers = data?.speakers ?? [];
   const judges = data?.judges ?? [];
+  const motions = motionsData ?? [];
 
   // Build user participation matrix for games tab
   const { users, games } = useMemo(() => {
@@ -45,7 +53,7 @@ export const StatsPage: React.FC = () => {
     return { users: allUsers, games: gamesData };
   }, [gamesData]);
 
-  const isPageLoading = activeTab !== 'games' ? isLoading : false;
+  const isPageLoading = activeTab !== 'games' && activeTab !== 'themes' ? isLoading : false;
 
   if (isPageLoading) {
     return (
@@ -86,7 +94,7 @@ export const StatsPage: React.FC = () => {
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabValue)} className="w-full">
         <div className="px-4 py-3 border-b border-telegram-secondary-bg">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="speakers">
               Спикеры ({speakers.length})
             </TabsTrigger>
@@ -95,6 +103,9 @@ export const StatsPage: React.FC = () => {
             </TabsTrigger>
             <TabsTrigger value="games">
               Игры ({games.length})
+            </TabsTrigger>
+            <TabsTrigger value="themes">
+              Темы ({motions.length})
             </TabsTrigger>
           </TabsList>
         </div>
@@ -184,6 +195,54 @@ export const StatsPage: React.FC = () => {
                         <td className="py-3 px-2 text-center text-sm font-semibold text-telegram-text">
                           {judge.averageScore}
                         </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="themes" className="p-4">
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-telegram-text">Темы игр</h2>
+            {motionsLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-64 w-full" />
+              </div>
+            ) : motionsError ? (
+              <div className="flex flex-col items-center justify-center gap-4 py-12">
+                <div className="text-destructive">Не удалось загрузить данные о темах.</div>
+                <Button onClick={() => refetchMotions()}>
+                  Попробовать снова
+                </Button>
+              </div>
+            ) : motions.length === 0 ? (
+              <div className="text-center py-8 text-telegram-hint">Пока нет завершённых игр с темами</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-telegram-secondary-bg">
+                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text w-12">#</th>
+                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">Игра</th>
+                      <th className="text-left py-2 px-2 text-sm font-semibold text-telegram-text">Тема</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {motions.map((motion, index) => (
+                      <tr key={motion.gameId} className="border-b border-telegram-secondary-bg/50 last:border-0">
+                        <td className={cn(
+                          "py-3 px-2 text-sm font-bold",
+                          index === 0 ? "text-yellow-500" :
+                          index === 1 ? "text-gray-400" :
+                          index === 2 ? "text-amber-600" :
+                          "text-telegram-hint"
+                        )}>{index + 1}</td>
+                        <td className="py-3 px-2 font-medium text-telegram-text">{motion.gameName}</td>
+                        <td className="py-3 px-2 text-sm text-telegram-text">{motion.motion ?? '—'}</td>
                       </tr>
                     ))}
                   </tbody>

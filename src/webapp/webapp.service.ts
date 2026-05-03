@@ -92,6 +92,19 @@ export class WebAppService {
     };
   }
 
+  async getGameMotions(): Promise<import('./dtos/webapp.dto').GameMotionDto[]> {
+    const games = await this.gameRepository.find({
+      where: { status: GameStatus.COMPLETED },
+      order: { createdAt: 'ASC' },
+    });
+
+    return games.map((game) => ({
+      gameId: game.id,
+      gameName: game.name,
+      motion: game.motion,
+    }));
+  }
+
   async getGameParticipations(): Promise<import('./dtos/webapp.dto').GameParticipationDto[]> {
     const games = await this.gameRepository.find({
       where: { status: GameStatus.COMPLETED },

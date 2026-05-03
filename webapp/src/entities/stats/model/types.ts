@@ -29,6 +29,12 @@ export interface GameParticipation {
   participants: GameParticipationUser[];
 }
 
+export interface GameMotion {
+  gameId: string;
+  gameName: string;
+  motion: string | null;
+}
+
 export interface StatsResponse {
   speakers: SpeakerStat[];
   judges: JudgeStat[];
