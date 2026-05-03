@@ -315,18 +315,7 @@ export const StatsPage: React.FC = () => {
                         key={motion.gameId}
                         className="border-b border-telegram-secondary-bg/50 last:border-0"
                       >
-                        <td
-                          className={cn(
-                            'py-3 px-2 text-sm font-bold',
-                            index === 0
-                              ? 'text-yellow-500'
-                              : index === 1
-                                ? 'text-gray-400'
-                                : index === 2
-                                  ? 'text-amber-600'
-                                  : 'text-telegram-hint',
-                          )}
-                        >
+                        <td className="py-3 px-2 text-sm font-bold text-telegram-hint">
                           {index + 1}
                         </td>
                         <td className="py-3 px-2 font-medium text-telegram-text">
