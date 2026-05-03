@@ -29,6 +29,7 @@ import {
 import { formatUserOptionDisplayName } from '@/entities/admin';
 import type { UserOption } from '@/entities/admin';
 import { cn } from '@/shared/lib';
+import { apiClient } from '@/shared/api';
 import './styles/App.css';
 
 console.log('[APP] Module loaded');
@@ -866,6 +867,19 @@ const AppContent: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const { data: meData } = useMe();
+
+  useEffect(() => {
+    // Try to capture Telegram initData on mount (in case constructor missed it)
+    try {
+      const tg = (window as any).Telegram?.WebApp;
+      if (tg?.initData) {
+        apiClient.setInitData(tg.initData);
+        console.log('[APP] initData captured on mount');
+      }
+    } catch {
+      // Ignore - not in Telegram
+    }
+  }, []);
 
   useEffect(() => {
     try {

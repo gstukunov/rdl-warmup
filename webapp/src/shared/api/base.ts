@@ -74,10 +74,20 @@ class ApiClient {
       return tg.initData;
     }
 
+    // Fallback: parse tgWebAppData from URL query string
     const urlParams = new URLSearchParams(window.location.search);
-    const tgWebAppData = urlParams.get('tgWebAppData');
-    if (tgWebAppData) {
-      return tgWebAppData;
+    const tgWebAppDataQuery = urlParams.get('tgWebAppData');
+    if (tgWebAppDataQuery) {
+      return tgWebAppDataQuery;
+    }
+
+    // Fallback: parse tgWebAppData from URL hash fragment
+    // Telegram Mini Apps often pass initData in the hash
+    const hash = window.location.hash.replace(/^#/, '');
+    const hashParams = new URLSearchParams(hash);
+    const tgWebAppDataHash = hashParams.get('tgWebAppData');
+    if (tgWebAppDataHash) {
+      return tgWebAppDataHash;
     }
 
     if (import.meta.env.DEV) {
