@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { QueryProvider } from './providers';
 import { useStats, useGameParticipations, useGameMotions } from '@/entities/stats';
+import { ExportGameVisitsButton } from '@/features/export-stats';
 import { useMe } from '@/entities/user';
 import {
   Button,
@@ -188,9 +189,12 @@ const GamesContent: React.FC = () => {
 
   return (
     <div className="p-4 space-y-4">
-      <h2 className="text-lg font-semibold text-telegram-text">
-        Участие в играх
-      </h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-telegram-text">
+          Участие в играх
+        </h2>
+        <ExportGameVisitsButton />
+      </div>
       {games.length === 0 ? (
         <div className="text-center py-8 text-telegram-hint">
           Пока нет завершённых игр

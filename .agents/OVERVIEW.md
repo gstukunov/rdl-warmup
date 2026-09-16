@@ -114,6 +114,7 @@ No auth required for public stats
 NestJS serves webapp
     ↓
 React App calls GET /stats, GET /stats/games, GET /stats/motions
+    (GET /api/stats/games/export downloads the same participation data as .xlsx)
     ↓
 Public endpoints return data
 ```

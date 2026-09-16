@@ -97,6 +97,15 @@ class ApiClient {
     return '';
   }
 
+  /**
+   * Absolute URL for an API path, for direct file downloads that bypass axios
+   * (the response is a file, not the JSON envelope apiClient.get() expects).
+   */
+  resolveUrl(path: string): string {
+    const base = (this.client.defaults.baseURL || '/api').replace(/\/$/, '');
+    return new URL(`${base}${path}`, window.location.origin).toString();
+  }
+
   setInitData(data: string) {
     this.initData = data;
     console.log('[API] initData set externally');

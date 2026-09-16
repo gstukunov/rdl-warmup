@@ -2,3 +2,4 @@
 export * from './join-game';
 export * from './leave-game';
 export * from './admin-auth';
+export * from './export-stats';

@@ -83,7 +83,8 @@ webapp/src/
 ├── features/                     # User interactions
 │   ├── join-game/
 │   ├── leave-game/
-│   └── admin-auth/
+│   ├── admin-auth/
+│   └── export-stats/            # "Скачать Excel" button (GET /api/stats/games/export)
 │
 ├── entities/                     # Business entities
 │   ├── game/                    # Game entity

@@ -314,6 +314,7 @@ constructor(private repo: GameRepositoryImpl) {}
 
 ### Stats Module (Public)
 - Endpoints: `GET /stats`, `GET /stats/games`, `GET /stats/motions`
+- `GET /api/stats/games/export` — Excel (.xlsx) download: sheet "Посещения" is a participants × games matrix (role per game + totals), sheet "Игры" lists every game. Covers ALL games regardless of status; participation is unioned from `game_participants`, `speaker_scores`, `judge_feedback` and the legacy `games.settings.roomAllocations` JSON (see `src/webapp/game-visits-export.service.ts`)
 - No authentication required
 
 ### Admin Module

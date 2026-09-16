@@ -4,6 +4,7 @@ import {
   useGameParticipations,
   useGameMotions,
 } from '@/entities/stats';
+import { ExportGameVisitsButton } from '@/features/export-stats';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { Button, Skeleton, ThemeToggle } from '@/shared/ui';
 import { cn } from '@/shared/lib';
@@ -335,9 +336,12 @@ export const StatsPage: React.FC = () => {
 
         <TabsContent value="games" className="p-4">
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-telegram-text">
-              Участие в играх
-            </h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-telegram-text">
+                Участие в играх
+              </h2>
+              <ExportGameVisitsButton />
+            </div>
             {gamesLoading ? (
               <div className="space-y-4">
                 <Skeleton className="h-10 w-full" />
